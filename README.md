@@ -21,7 +21,7 @@ Built for the **Keyloop Technical Assessment — Scenario A: The Unified Service
 | Database | PostgreSQL 18 | Range types + exclusion constraints prevent overlapping bookings |
 | Data access | Entity Framework Core | Migrations and LINQ; raw SQL only for the constraint |
 | Testing | xUnit + Testcontainers | Integration tests against a real PostgreSQL |
-| Observability | Serilog + OpenTelemetry + Jaeger | Structured logs, metrics, distributed tracing |
+| Observability | OpenTelemetry + .NET Aspire Dashboard | Structured logs, metrics and traces over OTLP; built-in .NET logging, no extra logging library |
 | API docs | OpenAPI + Scalar UI | Interactive client stub |
 | Runtime | Docker Compose | One command to run everything |
 
@@ -44,14 +44,14 @@ docker compose up --build
 | --- | --- |
 | API | http://localhost:8080 |
 | API docs (Scalar) | http://localhost:8080/scalar |
-| Jaeger UI | http://localhost:16686 |
+| Aspire Dashboard (traces, metrics, logs) | http://localhost:18888 |
 
 The database is migrated and seeded with sample dealerships, bays, technicians, customers and vehicles on startup.
 
 ### Run the API locally
 
 ```bash
-docker compose up -d postgres jaeger
+docker compose up -d postgres aspire-dashboard
 dotnet run --project src/Scheduler.Api
 ```
 

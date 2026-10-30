@@ -39,7 +39,7 @@
 - D8: Overall direction agreed. Work in three levels (brief and direction, then system design in the SDD, then detailed design and code per task). Scope: must = booking with bay + qualified technician check, get appointment, no double booking under concurrency, core tests, client stub, one-command run, SDD; should = availability lookup, cancel, observability in the demo, CI; could = Idempotency-Key; won't = auth, UI, notifications, rescheduling, technician shifts.
 - D9: Assumption A17 (bays and technicians are independent pools; any technician can work in any bay of the same dealership) proposed; the user raised no objection. Rejections state whether bays or technicians were the bottleneck.
 - D10: Plan-versus-reality handling (early finish, overrun, extra work, technician late or absent) is designed in a dedicated SDD section only; the code stays focused on booking (option A).
-- D11 (PROPOSED, awaiting approval): logging uses built-in .NET structured logging exported through OpenTelemetry instead of Serilog (SDD section 9), to avoid an extra dependency and get log-trace correlation in the Aspire Dashboard.
+- D11: Approved by the user: logging uses built-in .NET structured logging exported through OpenTelemetry instead of Serilog (SDD section 9), to avoid an extra dependency and get log-trace correlation in the Aspire Dashboard.
 
 ## Architecture summary
 
@@ -47,8 +47,7 @@ Planned, not implemented (see docs/system-design.md): ASP.NET Core (.NET 10) mod
 
 ## Known issues
 
-- README still names Jaeger (tracing UI) and Serilog (logging); the SDD uses the Aspire Dashboard (D3) and built-in logging (D11, proposed). README to be aligned once D11 is decided.
-- README "Overview" presents availability, cancel and Idempotency-Key as core features; per D8 they are should/could items.
+- README ports for the Aspire Dashboard (18888) and the API (8080) are planned values, still marked "confirm ports once implemented".
 
 ## Verification evidence
 

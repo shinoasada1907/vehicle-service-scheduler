@@ -20,6 +20,8 @@ public sealed class PostgresFixture : IAsyncLifetime
         await DatabaseSeeder.SeedAsync(db, cancellationToken);
     }
 
+    public string ConnectionString => _container.GetConnectionString();
+
     public ValueTask DisposeAsync() => _container.DisposeAsync();
 
     public SchedulerDbContext CreateDbContext()

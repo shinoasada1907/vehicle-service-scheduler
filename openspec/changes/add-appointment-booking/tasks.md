@@ -74,12 +74,12 @@ If a step is done differently from this plan, strike it through and write the re
 
 ## 7. HTTP API
 
-- [ ] 7.1 Present the approach and get approval, including permission for the configuration files in 7.3
-- [ ] 7.2 Implement `POST /appointments` and `GET /appointments/{id}`, request validation (an explicit UTC offset is required), Problem Details for every error, the OpenAPI document and the Scalar UI, plus the appointment query and the infrastructure service registration moved from task 6
-- [ ] 7.3 🔒 Create the `Scheduler.Api` project (moved from task 1), and add `appsettings` and launch settings (development-only connection string, migrate-and-seed flag)
-- [ ] 7.4 Write HTTP-level tests for S1, S3, S4, S11, S14, S16, S17, S19, S22, S23, S24, S25, S30, S31
-- [ ] 7.5 Verify build and tests are green, and get approval
-- [ ] 7.6 Commit `feat(api): add booking and retrieval endpoints`, then ask before pushing
+- [x] 7.1 Present the approach and get approval, including permission for the configuration files in 7.3
+- [x] 7.2 Implement `POST /appointments` and `GET /appointments/{id}`, request validation (an explicit UTC offset is required), Problem Details for every error, the OpenAPI document and the Scalar UI, plus the appointment query and the infrastructure service registration moved from task 6
+- [x] 7.3 🔒 Create the `Scheduler.Api` project (moved from task 1), and add `appsettings` and launch settings (development-only connection string, migrate-and-seed flag)
+- [x] 7.4 Write HTTP-level tests for S1, S3, S4, S11, S14, S16, S17, S19, S22, S23, S24, S25, S30, S31, plus E3 (the OpenAPI document is served and lists `/appointments`) and E4 (the Scalar UI is served), both approved by the user on 2026-11-01
+- [x] 7.5 Verify build and tests are green, and get approval
+- [x] 7.6 Commit `feat(api): add booking and retrieval endpoints`, then ask before pushing
 
 ## 8. Proof of no double booking
 

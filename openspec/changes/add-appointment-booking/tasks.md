@@ -41,10 +41,10 @@ If a step is done differently from this plan, strike it through and write the re
 
 ## 3. Continuous integration 🔒
 
-- [ ] 3.1 Present the workflow and get permission
-- [ ] 3.2 Add a GitHub Actions workflow that restores, builds and tests on every push and pull request
-- [ ] 3.3 Verify the same commands pass locally, and get approval
-- [ ] 3.4 Commit `ci: build and test on every push`, then ask before pushing
+- [x] 3.1 Present the workflow and get permission
+- [x] 3.2 Add a GitHub Actions workflow that restores, builds and tests on every push and pull request
+- [x] 3.3 Verify the same commands pass locally, and get approval
+- [x] 3.4 Commit `ci: build and test on every push`, then ask before pushing
 - [ ] 3.5 After the push, check that the CI run is green
 
 ## 4. Bay and technician matching

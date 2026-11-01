@@ -24,11 +24,11 @@ If a step is done differently from this plan, strike it through and write the re
 
 ## 1. Solution skeleton 🔒
 
-- [ ] 1.1 Present the approach and get approval, including permission for the configuration files
-- [ ] 1.2 Create branch `feature/appointment-booking` from `docs/system-design`
-- [ ] 1.3 Create the solution, the four `src` projects with inward-only references, shared build settings, central package versions and `global.json`
-- [ ] 1.4 Verify that `dotnet build` succeeds with no warnings, and get approval
-- [ ] 1.5 Commit `chore: set up solution and build settings`, then ask before pushing
+- [x] 1.1 Present the approach and get approval, including permission for the configuration files
+- [x] 1.2 Create branch `feature/appointment-booking` from `docs/system-design`
+- [x] 1.3 ~~Create the solution, the four `src` projects with inward-only references, shared build settings, central package versions and `global.json`~~ Create the solution, the three `src` projects `Scheduler.Domain`, `Scheduler.Application` and `Scheduler.Infrastructure` with inward-only references, shared build settings, central package versions and `global.json`. **Reason:** a web project does not build without `Program.cs`, and a placeholder is not allowed (`AGENTS.md`), so `Scheduler.Api` is created in task 7 (approved by the user on 2026-11-01).
+- [x] 1.4 Verify that `dotnet build` succeeds with no warnings, and get approval
+- [x] 1.5 Commit `chore: set up solution and build settings`, then ask before pushing
 
 ## 2. Time and booking rules
 
@@ -76,7 +76,7 @@ If a step is done differently from this plan, strike it through and write the re
 
 - [ ] 7.1 Present the approach and get approval, including permission for the configuration files in 7.3
 - [ ] 7.2 Implement `POST /appointments` and `GET /appointments/{id}`, request validation (an explicit UTC offset is required), Problem Details for every error, the OpenAPI document and the Scalar UI
-- [ ] 7.3 🔒 Add `appsettings` and launch settings (development-only connection string, migrate-and-seed flag)
+- [ ] 7.3 🔒 Create the `Scheduler.Api` project (moved from task 1), and add `appsettings` and launch settings (development-only connection string, migrate-and-seed flag)
 - [ ] 7.4 Write HTTP-level tests for S1, S3, S4, S11, S14, S16, S17, S19, S22, S23, S24, S25, S30, S31
 - [ ] 7.5 Verify build and tests are green, and get approval
 - [ ] 7.6 Commit `feat(api): add booking and retrieval endpoints`, then ask before pushing

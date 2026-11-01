@@ -7,19 +7,20 @@
 - Active mode: HYBRID (feature-code AUTO; tests, design, configuration, documentation TRAINING = user's permission required)
 - Mode source: project-mode.yaml (AUTO selected on 2026-10-30, changed to HYBRID by the user on 2026-10-30, D16)
 - Current phase: Stage 6 of the agreed process (D17): implementation of add-appointment-booking, not started; task 1 needs the user's approval of its approach first
-- Current task: TASK-001 Requirements analysis, system design and implementation plan for Scenario A
+- Current task: TASK-002 add-appointment-booking, task 1 (solution skeleton)
 - Task owner: CLAUDE
 - Reviewer: HUMAN
-- Current state: PLANNED (implementation plan for add-appointment-booking committed at the user's request; execution approach not chosen yet)
-- Branch: docs/system-design
-- Files currently owned/being modified: PROJECT_STATE.md, openspec/changes/add-appointment-booking/**
+- Current state: IMPLEMENTING (task 1 approved by the user and committed; next: ask before pushing, then present the approach for task 2)
+- Branch: feature/appointment-booking (from docs/system-design at ab4ea47)
+- Files currently owned/being modified: global.json, Directory.Build.props, Directory.Packages.props, VehicleServiceScheduler.slnx, src/Scheduler.Domain/Scheduler.Domain.csproj, src/Scheduler.Application/Scheduler.Application.csproj, src/Scheduler.Infrastructure/Scheduler.Infrastructure.csproj, PROJECT_STATE.md, openspec/changes/add-appointment-booking/tasks.md
 - Other active agents: none recorded
 
 ## Task and file ownership
 
 | Task | Owner | Reviewer | Mode | State | Exact files | Updated |
 | --- | --- | --- | --- | --- | --- | --- |
-| TASK-001 Design Scenario A | CLAUDE | HUMAN | AUTO | REVIEWING | PROJECT_STATE.md, openspec/changes/add-appointment-booking/** | 2026-10-30 |
+| TASK-001 Design Scenario A | CLAUDE | HUMAN | AUTO → HYBRID | DONE | none (design, scenarios and plan approved: D19–D21) | 2026-11-01 |
+| TASK-002 add-appointment-booking, task 1 | CLAUDE (Sonnet subagent executes, Claude reviews) | HUMAN | HYBRID (configuration, approved) | IMPLEMENTING | global.json, Directory.Build.props, Directory.Packages.props, VehicleServiceScheduler.slnx, src/Scheduler.{Domain,Application,Infrastructure}/*.csproj, PROJECT_STATE.md, openspec/changes/add-appointment-booking/tasks.md | 2026-11-01 |
 
 ## Completed work
 
@@ -69,6 +70,7 @@ Planned, not implemented (see docs/system-design.md): ASP.NET Core (.NET 10) mod
 - No project source code exists; no project build or test has been run. Environment observed: .NET SDK 10.0.401, Docker 29.8.0 (engine not running), OpenSpec CLI 1.6.0, Node 26.1.0.
 - Throwaway probes in the session scratchpad (not in the repo) confirmed: `dotnet new sln` creates .slnx; xunit.v3 4.0.2 runs only with the Microsoft.Testing.Platform runner selected in global.json; a test project with zero tests exits with code 8; `new PostgreSqlBuilder()` is obsolete in Testcontainers 4.16.0 (use the image constructor); `dotnet ef` 10.0.14 works with a class library startup project after a build, and maps an owned record collection and TimeOnly as expected; Scalar.AspNetCore 2.18.6 compiles with `MapScalarApiReference()`.
 - `openspec validate add-appointment-booking --strict`: valid; `openspec status`: 4/4 artifacts complete; apply parser: 66 tasks.
+- 2026-11-01, task 1 (solution skeleton): Claude reviewed the seven files created by the Sonnet subagent against the approved content (identical; no .cs files, no package references, no other projects; the subagent's temporary file outside the repository was deleted). `dotnet build --no-incremental` on SDK 10.0.401: Build succeeded, 0 Warning(s), 0 Error(s). No tests exist yet, so `dotnet test` was not run.
 
 ## Next task
 

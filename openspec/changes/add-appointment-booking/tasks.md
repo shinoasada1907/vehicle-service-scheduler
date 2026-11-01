@@ -90,10 +90,10 @@ If a step is done differently from this plan, strike it through and write the re
 
 ## 9. Docker Compose 🔒
 
-- [ ] 9.1 Present the files and get permission
-- [ ] 9.2 Add `Dockerfile`, `.dockerignore`, `docker-compose.yml` (API and PostgreSQL) and `.env.example`
-- [ ] 9.3 Verify by hand with curl: book, read back, a London summer-time booking (time zone data in the container) and the Scalar UI; then `docker compose down -v`; get approval
-- [ ] 9.4 Commit `build: run the API and PostgreSQL with Docker Compose`, then ask before pushing
+- [x] 9.1 Present the files and get permission
+- [x] 9.2 Add `Dockerfile`, `.dockerignore`, `docker-compose.yml` (API and PostgreSQL) and `.env.example`
+- [x] 9.3 Verify by hand with curl: book, read back, a London summer-time booking (time zone data in the container) and the Scalar UI; then `docker compose down -v`; get approval
+- [x] 9.4 Commit `build: run the API and PostgreSQL with Docker Compose`, then ask before pushing
 
 ## 10. Client stub and README 🔒
 

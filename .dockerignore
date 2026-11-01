@@ -1,0 +1,12 @@
+**/bin
+**/obj
+.git
+.github
+.vs
+.claude
+docs
+openspec
+tests
+TestResults
+*.md
+.env

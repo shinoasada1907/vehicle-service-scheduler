@@ -45,15 +45,15 @@ If a step is done differently from this plan, strike it through and write the re
 - [x] 3.2 Add a GitHub Actions workflow that restores, builds and tests on every push and pull request
 - [x] 3.3 Verify the same commands pass locally, and get approval
 - [x] 3.4 Commit `ci: build and test on every push`, then ask before pushing
-- [ ] 3.5 After the push, check that the CI run is green
+- [x] 3.5 After the push, check that the CI run is green
 
 ## 4. Bay and technician matching
 
-- [ ] 4.1 Present the approach and get approval
-- [ ] 4.2 Implement service bays, technicians and their qualifications, service types, appointments, and the allocator that picks the first free compatible bay and the first free qualified technician by name, or reports that the service is not offered or which resource is short
-- [ ] 4.3 Write tests for S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15
-- [ ] 4.4 Verify build and tests are green, and get approval
-- [ ] 4.5 Commit `feat(domain): match a free bay and technician`, then ask before pushing
+- [x] 4.1 Present the approach and get approval
+- [x] 4.2 Implement service bays, technicians and their qualifications, service types, appointments, and the allocator that picks the first free compatible bay and the first free qualified technician by name, or reports that the service is not offered or which resource is short
+- [x] 4.3 Write tests for S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15
+- [x] 4.4 Verify build and tests are green, and get approval
+- [x] 4.5 Commit `feat(domain): match a free bay and technician`, then ask before pushing
 
 ## 5. Booking use case
 

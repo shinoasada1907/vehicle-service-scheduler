@@ -83,10 +83,10 @@ If a step is done differently from this plan, strike it through and write the re
 
 ## 8. Proof of no double booking
 
-- [ ] 8.1 Present the approach and get approval
-- [ ] 8.2 Write the parallel-request test for S26
-- [ ] 8.3 Verify the test is green, and get approval
-- [ ] 8.4 Commit `test: prove no double booking under parallel requests`, then ask before pushing
+- [x] 8.1 Present the approach and get approval
+- [x] 8.2 Write the parallel-request test for S26
+- [x] 8.3 Verify the test is green, and get approval
+- [x] 8.4 Commit `test: prove no double booking under parallel requests`, then ask before pushing
 
 ## 9. Docker Compose 🔒
 

@@ -1,4 +1,15 @@
 # Operating mode for this project, selected by the user on 2026-10-30.
 # Operating modes: AUTO | TRAINING | HYBRID
-mode: AUTO
-areas: {}
+#
+# In this project:
+#   AUTO     = Claude may act without asking, within a task the user has approved.
+#   TRAINING = the user decides. Claude proposes and changes these areas only after
+#              the user's explicit permission for that specific change.
+# Commits, pushes, pull requests and merges always need the user's approval.
+mode: HYBRID
+areas:
+  feature-code: AUTO        # production code of features in src/ for approved tasks
+  tests: TRAINING           # test scenarios and test code
+  design: TRAINING          # SDD, data model, API contract, technical decisions, OpenSpec artifacts, plans
+  configuration: TRAINING   # solution/project files, packages, appsettings, global.json, Docker, CI
+  documentation: TRAINING   # README, ai-log, AI narrative, other docs

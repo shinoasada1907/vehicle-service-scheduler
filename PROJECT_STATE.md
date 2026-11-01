@@ -4,9 +4,9 @@
 
 - Project/root: D:\Code\Product\vehicle-service-scheduler
 - Last updated: 2026-10-30
-- Active mode: AUTO
-- Mode source: project-mode.yaml (selected by the user on 2026-10-30)
-- Current phase: DESIGN
+- Active mode: HYBRID (feature-code AUTO; tests, design, configuration, documentation TRAINING = user's permission required)
+- Mode source: project-mode.yaml (AUTO selected on 2026-10-30, changed to HYBRID by the user on 2026-10-30, D16)
+- Current phase: Stage 6 of the agreed process (D17): implementation of add-appointment-booking, not started; task 1 needs the user's approval of its approach first
 - Current task: TASK-001 Requirements analysis, system design and implementation plan for Scenario A
 - Task owner: CLAUDE
 - Reviewer: HUMAN
@@ -27,6 +27,7 @@
 - 2026-10-30: OpenSpec 1.6.0 initialized (`openspec init --tools claude`), creating openspec/ and .claude/{commands/opsx,skills/openspec-*}.
 - 2026-10-30: docs/system-design.md draft 0.1 written (16 sections, 6 Mermaid diagrams), following the outline the user approved. Section 15 (GenAI) is a factual draft for the user to rewrite in their own words.
 - 2026-10-30: OpenSpec change add-appointment-booking created: proposal.md, specs/appointment-booking/spec.md (11 requirements), design.md (16 decisions), tasks.md (7 tasks, 66 checkboxes, full code per step).
+- 2026-11-01: spec.md rewritten with the 31 approved scenarios S1–S31 (9 requirements); tasks.md rewritten as the approved task-level plan (11 sections, 55 steps, no code). `openspec validate --strict`: valid; every scenario is assigned to at least one task.
 
 ## Decisions recorded
 
@@ -42,6 +43,14 @@
 - D10: Plan-versus-reality handling (early finish, overrun, extra work, technician late or absent) is designed in a dedicated SDD section only; the code stays focused on booking (option A).
 - D11: Approved by the user: logging uses built-in .NET structured logging exported through OpenTelemetry instead of Serilog (SDD section 9), to avoid an extra dependency and get log-trace correlation in the Aspire Dashboard.
 - D12: Delivery split into four OpenSpec changes in MoSCoW order: add-appointment-booking (must), add-cancellation-and-availability (should), add-observability (should), add-idempotent-booking (could). Only the first has a detailed plan; the others are planned when their turn comes.
+- D14: Git workflow agreed because the public GitHub history is evidence of the process: one pull request per OpenSpec change (and one for the current design branch), merged with a merge commit (no squash), CI green before merge, push after each task. Each commit is one feature with its tests, built and tested green; no failing-test commits. Pushing, opening PRs and merging still need the user's approval each time. Commit cadence in tasks.md to be updated once D15 is decided.
+- D15: Decided by the user: for each feature, the code is written first and the tests after it, covering exactly the scenarios the user approved; commit when they pass. Test-first is not used in this project.
+- D16: Mode changed from AUTO to HYBRID by the user, because Claude had acted ahead of agreement (code-level design before direction, a plan with full code, probes and a demo nobody asked for, process choices baked into the plan). Claude works on its own only when coding features in approved tasks; tests, design, configuration and documentation need the user's permission for each change (project-mode.yaml).
+- D17: Working process agreed by the user. Six stages, each closed by the user's approval: (1) brief and direction — done; (2) system design (SDD) read and approved by the user; (3) working process — done (D16, D17); (4) test scenarios, a plain list decided by the user; (5) implementation plan at task level, without pre-written code, approved by the user; (6) implementation task by task: Claude presents the approach → user approves → Claude implements → Claude shows real build/test evidence → user approves → commit. Rules: one task per request; a question is answered in words; any file change or command outside the approved scope is asked first.
+- D18: The draft plan committed in 6aed191 is kept unchanged as history. It is not used for implementation; at stage 5 the plan is rewritten at task level, without pre-written code, in a new commit.
+- D19: Stage 2 closed: the user approved docs/system-design.md (draft 0.1). When implementation reveals something that is not optimal, the SDD is updated, with the user's permission for each change (design is a TRAINING area). Known gap: section 15 (GenAI) predates D14–D18; the user rewrites it in their own words.
+- D20: Stage 4 closed: the user approved the 31 test scenarios S1–S31 for add-appointment-booking (presented in chat on 2026-11-01; not yet written to spec.md). Tests cover exactly these scenarios; any extra test needs the user's approval. The two open questions were left unanswered, so current behaviour stands until the user says otherwise: no limit on how far ahead a booking can be made, and one customer may book two different vehicles at the same time.
+- D21: Stage 5 closed: the user approved the task-level plan (11 sections, 55 steps, no pre-written code) and gave permission to write it to tasks.md and the scenarios S1–S31 to spec.md.
 - D13: NuGet packages approved for the whole project: Npgsql.EntityFrameworkCore.PostgreSQL 10.0.3, Microsoft.EntityFrameworkCore.Design 10.0.14 (+ dotnet-ef tool), Microsoft.AspNetCore.OpenApi 10.0.14, Scalar.AspNetCore 2.18.6, xunit.v3 4.0.2 (+ runner and Microsoft.NET.Test.Sdk, which turned out not to be needed with Microsoft.Testing.Platform), Testcontainers.PostgreSql 4.16.0, Microsoft.AspNetCore.Mvc.Testing 10.0.14, Microsoft.Extensions.TimeProvider.Testing 10.11.0; for add-observability: OpenTelemetry.Extensions.Hosting, OpenTelemetry.Exporter.OpenTelemetryProtocol, OpenTelemetry.Instrumentation.AspNetCore 1.20.1, Npgsql.OpenTelemetry 10.0.3, Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore 10.0.14.
 
 ## Architecture summary
@@ -63,7 +72,7 @@ Planned, not implemented (see docs/system-design.md): ASP.NET Core (.NET 10) mod
 
 ## Next task
 
-Human reviews the plan in openspec/changes/add-appointment-booking/ and approves committing it on docs/system-design. Then choose the execution approach (subagent per task, or inline) and start task 1 on branch feature/appointment-booking.
+Commit the process and plan changes (project-mode.yaml, PROJECT_STATE.md, spec.md, tasks.md) when the user asks. Then task 1 of openspec/changes/add-appointment-booking/tasks.md: present the approach and the configuration files, and wait for approval.
 
 ## Last working checkpoint
 

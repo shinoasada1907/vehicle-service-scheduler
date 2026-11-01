@@ -65,17 +65,17 @@ If a step is done differently from this plan, strike it through and write the re
 
 ## 6. PostgreSQL persistence
 
-- [ ] 6.1 Present the approach and get approval; check that Docker is running
-- [ ] 6.2 Implement the EF Core mapping, the initial migration with the three exclusion constraints (bay, technician, vehicle; confirmed appointments only; half-open ranges), the booking store, the appointment query and the seed data
-- [ ] 6.3 🔒 Create the integration test project (PostgreSQL through Testcontainers) and add the `dotnet-ef` local tool
-- [ ] 6.4 Write database-level tests for S8, S29, S30
-- [ ] 6.5 Verify build and tests are green, and get approval
-- [ ] 6.6 Commit `feat(infrastructure): store appointments in PostgreSQL`, then ask before pushing
+- [x] 6.1 Present the approach and get approval; check that Docker is running
+- [x] 6.2 ~~Implement the EF Core mapping, the initial migration with the three exclusion constraints (bay, technician, vehicle; confirmed appointments only; half-open ranges), the booking store, the appointment query and the seed data~~ Implement the EF Core mapping, the initial migration with the three exclusion constraints (bay, technician, vehicle; confirmed appointments only; half-open ranges), the booking store and the seed data. **Reason:** the appointment query and the service registration are first used by the API in task 7 and tested there (S4, S25), so they move to task 7 to avoid code without a current use (approved by the user on 2026-11-01).
+- [x] 6.3 🔒 Create the integration test project (PostgreSQL through Testcontainers) and add the `dotnet-ef` local tool
+- [x] 6.4 Write database-level tests for S8, S29, S30, plus E1 (after a rejected insert the same store can add another appointment, the database side of S27) and E2 (the schedule holds only the dealership's bays, technicians and appointments, and the vehicle's appointments at any dealership), both approved by the user on 2026-11-01
+- [x] 6.5 Verify build and tests are green, and get approval
+- [x] 6.6 Commit `feat(infrastructure): store appointments in PostgreSQL`, then ask before pushing
 
 ## 7. HTTP API
 
 - [ ] 7.1 Present the approach and get approval, including permission for the configuration files in 7.3
-- [ ] 7.2 Implement `POST /appointments` and `GET /appointments/{id}`, request validation (an explicit UTC offset is required), Problem Details for every error, the OpenAPI document and the Scalar UI
+- [ ] 7.2 Implement `POST /appointments` and `GET /appointments/{id}`, request validation (an explicit UTC offset is required), Problem Details for every error, the OpenAPI document and the Scalar UI, plus the appointment query and the infrastructure service registration moved from task 6
 - [ ] 7.3 🔒 Create the `Scheduler.Api` project (moved from task 1), and add `appsettings` and launch settings (development-only connection string, migrate-and-seed flag)
 - [ ] 7.4 Write HTTP-level tests for S1, S3, S4, S11, S14, S16, S17, S19, S22, S23, S24, S25, S30, S31
 - [ ] 7.5 Verify build and tests are green, and get approval

@@ -5,6 +5,7 @@
     <Project Path="src/Scheduler.Infrastructure/Scheduler.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Scheduler.IntegrationTests/Scheduler.IntegrationTests.csproj" />
     <Project Path="tests/Scheduler.UnitTests/Scheduler.UnitTests.csproj" />
   </Folder>
 </Solution>

@@ -6,4 +6,5 @@ public enum BookingRuleViolation
     StartInPast,
     StartNotOnSlotBoundary,
     OutsideOpeningHours,
+    ServiceNotOffered,
 }

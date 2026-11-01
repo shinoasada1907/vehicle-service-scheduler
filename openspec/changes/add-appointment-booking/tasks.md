@@ -57,11 +57,11 @@ If a step is done differently from this plan, strike it through and write the re
 
 ## 5. Booking use case
 
-- [ ] 5.1 Present the approach and get approval
-- [ ] 5.2 Implement the application layer: persistence ports, the booking use case (load references, apply the rules, allocate, store) with up to three attempts when a concurrent request takes the bay or technician, and the appointment read model
-- [ ] 5.3 Write tests, using an in-memory store and a controllable clock, for S1, S2, S3, S22, S27, S28, S30
-- [ ] 5.4 Verify build and tests are green, and get approval
-- [ ] 5.5 Commit `feat(application): add the booking use case`, then ask before pushing
+- [x] 5.1 Present the approach and get approval
+- [x] 5.2 Implement the application layer: persistence ports, the booking use case (load references, apply the rules, allocate, store) with up to three attempts when a concurrent request takes the bay or technician, and the appointment read model
+- [x] 5.3 Write tests, using an in-memory store and a controllable clock, for S1, S2, S3, S22, S27, S28, S30
+- [x] 5.4 Verify build and tests are green, and get approval
+- [x] 5.5 Commit `feat(application): add the booking use case`, then ask before pushing
 
 ## 6. PostgreSQL persistence
 

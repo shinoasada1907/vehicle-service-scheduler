@@ -19,6 +19,9 @@ internal static class TestData
     public static readonly ServiceType OilChange = new(
         Guid.Parse("5e000000-0000-4000-8000-000000000001"), "Oil change", 60, BayType.General);
 
+    public static readonly ServiceType BrakeInspection = new(
+        Guid.Parse("5e000000-0000-4000-8000-000000000002"), "Brake inspection", 90, BayType.General);
+
     public static readonly ServiceType WheelAlignment = new(
         Guid.Parse("5e000000-0000-4000-8000-000000000003"), "Wheel alignment", 60, BayType.Alignment);
 

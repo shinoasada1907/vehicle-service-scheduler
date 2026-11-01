@@ -32,12 +32,12 @@ If a step is done differently from this plan, strike it through and write the re
 
 ## 2. Time and booking rules
 
-- [ ] 2.1 Present the approach and get approval
-- [ ] 2.2 Implement the half-open UTC time range, dealership opening hours in the dealership's time zone, customer and vehicle, and the booking policy (vehicle ownership, start in the future, 15-minute boundary, within opening hours)
-- [ ] 2.3 🔒 Create the unit test project
-- [ ] 2.4 Write tests for S16, S17, S18, S19, S20, S21
-- [ ] 2.5 Verify build and tests are green, and get approval
-- [ ] 2.6 Commit `feat(domain): add time and booking rules`, then ask before pushing
+- [x] 2.1 Present the approach and get approval
+- [x] 2.2 Implement the half-open UTC time range, dealership opening hours in the dealership's time zone, customer and vehicle, and the booking policy (vehicle ownership, start in the future, 15-minute boundary, within opening hours)
+- [x] 2.3 🔒 Create the unit test project
+- [x] 2.4 Write tests for S16, S17, S18, S19, S20, S21
+- [x] 2.5 Verify build and tests are green, and get approval
+- [x] 2.6 Commit `feat(domain): add time and booking rules`, then ask before pushing
 
 ## 3. Continuous integration 🔒
 

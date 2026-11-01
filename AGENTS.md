@@ -56,6 +56,7 @@ Agreed with the repository owner while building this project. They apply to ever
 - **Questions:** answer in words. Do not run demos, probes or other work nobody asked for.
 - **Git** (D14): never commit to `main`. Ask before every commit, push, pull request and merge. One feature with its tests per commit, green. One pull request per OpenSpec change, merged with a merge commit (no squash). The public history is part of the assessment, so never rewrite pushed history.
 - **Plan changes:** if a step is done differently from `tasks.md`, strike it through and write the reason next to it; record decisions and evidence in `PROJECT_STATE.md`.
+- **Model split:** implementing an approved task (feature code and its approved tests) may be delegated to a Sonnet model, as a subagent or a separate session. The reviewing session (Opus) reads every changed file against the approved approach and scenarios, and reruns `dotnet build` and `dotnet test` itself before asking the owner to commit. Before a change is merged, an Opus session reviews the whole diff of its pull request.
 - **Environment:** integration tests need Docker running (Testcontainers, PostgreSQL 18). If Docker is not available, say so and rely on CI; do not mark the task done without test evidence.
 
 ## Code style

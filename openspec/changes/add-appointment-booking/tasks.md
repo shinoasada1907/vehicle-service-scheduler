@@ -97,11 +97,11 @@ If a step is done differently from this plan, strike it through and write the re
 
 ## 10. Client stub and README 🔒
 
-- [ ] 10.1 Present the changes and get permission
-- [ ] 10.2 Add `http/scheduler.http` with the main success and error cases, using the seed data
-- [ ] 10.3 Update the README sections on running, testing, API usage and sample data; the AI Collaboration Narrative stays the user's
-- [ ] 10.4 Get approval
-- [ ] 10.5 Commit `docs: add client stub and run instructions`, then ask before pushing
+- [x] 10.1 Present the changes and get permission
+- [x] 10.2 Add `http/scheduler.http` with the main success and error cases, using the seed data
+- [x] 10.3 Update the README sections on running, testing, API usage and sample data; the AI Collaboration Narrative stays the user's
+- [x] 10.4 Get approval
+- [x] 10.5 Commit `docs: add client stub and run instructions`, then ask before pushing
 
 ## 11. Close the change
 

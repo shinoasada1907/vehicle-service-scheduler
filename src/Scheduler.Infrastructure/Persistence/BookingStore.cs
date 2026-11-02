@@ -70,11 +70,15 @@ public sealed class BookingStore(SchedulerDbContext db) : IBookingStore
 
     public async Task<AddAppointmentResult> TryAddAsync(Appointment appointment, CancellationToken cancellationToken)
     {
-        db.Appointments.Add(appointment);
-
         try
         {
+            await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+            await LockResourcesAsync(appointment, cancellationToken);
+
+            db.Appointments.Add(appointment);
             await db.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
             return AddAppointmentResult.Added;
         }
         catch (Exception exception)
@@ -98,6 +102,19 @@ public sealed class BookingStore(SchedulerDbContext db) : IBookingStore
                     exception),
             };
         }
+    }
+
+    private async Task LockResourcesAsync(Appointment appointment, CancellationToken cancellationToken)
+    {
+        await db.Database.ExecuteSqlAsync(
+            $"SELECT pg_advisory_xact_lock(hashtextextended('bay:' || {appointment.ServiceBayId}::text, 0))",
+            cancellationToken);
+        await db.Database.ExecuteSqlAsync(
+            $"SELECT pg_advisory_xact_lock(hashtextextended('technician:' || {appointment.TechnicianId}::text, 0))",
+            cancellationToken);
+        await db.Database.ExecuteSqlAsync(
+            $"SELECT pg_advisory_xact_lock(hashtextextended('vehicle:' || {appointment.VehicleId}::text, 0))",
+            cancellationToken);
     }
 
     private static PostgresException? FindPostgresException(Exception exception, string sqlState)

@@ -79,7 +79,59 @@ public static class ProblemResults
             "The vehicle already has a confirmed appointment that overlaps the requested time.");
 
     public static Dictionary<string, object?> TraceExtensions(HttpContext httpContext) =>
-        new() { ["traceId"] = Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier };
+        new() { ["traceId"] = TraceId(httpContext) };
+
+    public static void Normalize(ProblemDetailsContext context)
+    {
+        var problem = context.ProblemDetails;
+        problem.Extensions["traceId"] = TraceId(context.HttpContext);
+
+        if (problem.Type?.StartsWith(TypePrefix, StringComparison.Ordinal) == true)
+        {
+            return;
+        }
+
+        var status = problem.Status ?? context.HttpContext.Response.StatusCode;
+
+        var mapped = status switch
+        {
+            StatusCodes.Status400BadRequest => (
+                "validation",
+                "Invalid request",
+                "The request body is malformed or a field has the wrong type."),
+            StatusCodes.Status404NotFound => (
+                "not-found",
+                "Resource not found",
+                "The requested resource was not found."),
+            StatusCodes.Status405MethodNotAllowed => (
+                "method-not-allowed",
+                "Method not allowed",
+                "The HTTP method is not allowed for this resource."),
+            StatusCodes.Status415UnsupportedMediaType => (
+                "unsupported-media-type",
+                "Unsupported media type",
+                "The request body must be JSON (Content-Type: application/json)."),
+            >= 500 and <= 599 => (
+                "internal-error",
+                "Internal server error",
+                "An unexpected error occurred."),
+            _ => default((string, string, string)?),
+        };
+
+        if (mapped is var (slug, title, detail))
+        {
+            problem.Type = TypePrefix + slug;
+            problem.Title = title;
+            problem.Detail = detail;
+        }
+        else if (string.IsNullOrWhiteSpace(problem.Detail))
+        {
+            problem.Detail = problem.Title;
+        }
+    }
+
+    private static string TraceId(HttpContext httpContext) =>
+        Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier;
 
     private static ProblemHttpResult Create(
         HttpContext httpContext,

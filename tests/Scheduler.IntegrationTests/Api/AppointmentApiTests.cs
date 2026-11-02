@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using Scheduler.Infrastructure.Seeding;
 using static Scheduler.IntegrationTests.Api.ApiTestHelpers;
 
@@ -187,6 +188,28 @@ public sealed class AppointmentApiTests : IAsyncLifetime
         var problem = await AssertProblemAsync(response, HttpStatusCode.BadRequest, "validation");
 
         Assert.True(problem.GetProperty("errors").TryGetProperty("startAt", out _));
+    }
+
+    [Fact]
+    public async Task E5_FieldWithWrongType_ReturnsValidationProblem()
+    {
+        using var content = new StringContent("""{"customerId":"abc"}""", Encoding.UTF8, "application/json");
+
+        using var response = await _client.PostAsync("/appointments", content, TestContext.Current.CancellationToken);
+
+        var problem = await AssertProblemAsync(response, HttpStatusCode.BadRequest, "validation");
+
+        Assert.Matches("^[0-9a-f]{32}$", problem.GetProperty("traceId").GetString());
+    }
+
+    [Fact]
+    public async Task E6_AppointmentIdThatIsNotAGuid_ReturnsNotFound()
+    {
+        using var response = await _client.GetAsync("/appointments/abc", TestContext.Current.CancellationToken);
+
+        var problem = await AssertProblemAsync(response, HttpStatusCode.NotFound, "not-found");
+
+        Assert.Matches("^[0-9a-f]{32}$", problem.GetProperty("traceId").GetString());
     }
 
     [Fact]

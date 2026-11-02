@@ -1,11 +1,12 @@
 using Scalar.AspNetCore;
 using Scheduler.Api.Appointments;
+using Scheduler.Api.Problems;
 using Scheduler.Application.Booking;
 using Scheduler.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddProblemDetails();
+builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = ProblemResults.Normalize);
 builder.Services.AddOpenApi();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddInfrastructure(services =>

@@ -93,6 +93,8 @@ public sealed class BookAppointmentHandler(IBookingStore store, TimeProvider clo
                 case AddAppointmentResult.TechnicianTaken:
                     lostRaceFor = CapacityShortage.Technicians;
                     break;
+                case AddAppointmentResult.Deadlocked:
+                    break;
             }
         }
 

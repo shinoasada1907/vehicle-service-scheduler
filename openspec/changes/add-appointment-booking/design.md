@@ -25,7 +25,7 @@ Facts checked on this machine before planning, in throwaway projects:
 ## Decisions
 
 ### 1. The domain chooses, the database arbitrates
-The use case loads every bay and technician of the dealership plus the confirmed appointments that overlap the requested range, and the domain (`ResourceAllocator`) filters by compatibility, qualification and freedom, then picks the first by name. The insert is the moment of truth: the exclusion constraints reject it if a concurrent request won. On a bay or technician conflict the use case reloads and tries again, at most 3 attempts in total; on a vehicle conflict it stops at once.
+The use case loads every bay and technician of the dealership plus the confirmed appointments that overlap the requested range, and the domain (`ResourceAllocator`) filters by compatibility, qualification and freedom, then picks the first by name. The insert is the moment of truth: the exclusion constraints reject it if a concurrent request won. On a bay or technician conflict the use case reloads and tries again, at most 3 attempts in total; on a vehicle conflict it stops at once. A PostgreSQL deadlock (`40P01`) between two inserts that conflict on several exclusion constraints is handled like a lost race: the store reports it, the change tracker is cleared, and the use case retries within the same three attempts.
 *Alternatives:* SQL-only candidate selection (rules would live in SQL and be duplicated by the availability feature); a per-dealership advisory lock (serialises all bookings and still checks before inserting). Both rejected in design part 1 (D5).
 
 ### 2. Load all bays and technicians, filter in the domain

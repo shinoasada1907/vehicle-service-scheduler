@@ -108,6 +108,18 @@ public sealed class BookAppointmentHandlerTests
     }
 
     [Fact]
+    public async Task E7_DeadlockOnFirstAttempt_RetriesAndBooks()
+    {
+        var scenario = new BookingScenario();
+        scenario.Store.Conflicts.Enqueue((AddAppointmentResult.Deadlocked, null));
+
+        var result = await scenario.Handler().HandleAsync(scenario.Command(), TestContext.Current.CancellationToken);
+
+        Assert.IsType<BookAppointmentResult.Booked>(result);
+        Assert.Equal(2, scenario.Store.ScheduleLoads);
+    }
+
+    [Fact]
     public async Task S30_VehicleBookedAtAnotherDealershipAtSameTime_IsRejected()
     {
         var scenario = new BookingScenario();

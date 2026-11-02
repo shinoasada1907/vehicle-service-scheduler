@@ -77,6 +77,12 @@ public sealed class BookingStore(SchedulerDbContext db) : IBookingStore
             await db.SaveChangesAsync(cancellationToken);
             return AddAppointmentResult.Added;
         }
+        catch (Exception exception)
+            when (FindPostgresException(exception, PostgresErrorCodes.DeadlockDetected) is not null)
+        {
+            db.ChangeTracker.Clear();
+            return AddAppointmentResult.Deadlocked;
+        }
         catch (DbUpdateException exception)
             when (exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.ExclusionViolation } violation)
         {
@@ -92,5 +98,18 @@ public sealed class BookingStore(SchedulerDbContext db) : IBookingStore
                     exception),
             };
         }
+    }
+
+    private static PostgresException? FindPostgresException(Exception exception, string sqlState)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is PostgresException postgresException && postgresException.SqlState == sqlState)
+            {
+                return postgresException;
+            }
+        }
+
+        return null;
     }
 }

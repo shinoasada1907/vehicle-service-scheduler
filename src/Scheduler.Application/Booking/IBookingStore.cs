@@ -38,4 +38,5 @@ public enum AddAppointmentResult
     BayTaken,
     TechnicianTaken,
     VehicleTaken,
+    Deadlocked,
 }

@@ -1,0 +1,203 @@
+# Vehicle Service Scheduler - client stub (Visual Studio and VS Code REST Client).
+#
+# Start the stack with: docker compose up --build
+# Bookings persist in PostgreSQL. Run this file from top to bottom on a fresh database;
+# reset it with: docker compose down -v
+# The ids below are the fixed sample-data ids (see "Sample data" in the README).
+
+@baseUrl = http://localhost:8080
+
+@london = d0000000-0000-4000-8000-000000000001
+@saigon = d0000000-0000-4000-8000-000000000002
+
+@oilChange = 5e000000-0000-4000-8000-000000000001
+@brakeInspection = 5e000000-0000-4000-8000-000000000002
+@wheelAlignment = 5e000000-0000-4000-8000-000000000003
+
+@janeSmith = c0000000-0000-4000-8000-000000000001
+@nguyenVanAn = c0000000-0000-4000-8000-000000000002
+
+@golf = ca000000-0000-4000-8000-000000000001
+@tesla = ca000000-0000-4000-8000-000000000002
+@vinfast = ca000000-0000-4000-8000-000000000003
+
+### 1. Book an oil change (60 min) - expect 201 Created with a Location header
+# @name book
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+
+{
+  "customerId": "{{janeSmith}}",
+  "vehicleId": "{{golf}}",
+  "dealershipId": "{{london}}",
+  "serviceTypeId": "{{oilChange}}",
+  "startAt": "2030-01-07T09:00:00Z"
+}
+
+### 2. Get the appointment just booked - expect 200 OK
+GET {{baseUrl}}{{book.response.headers.Location}}
+
+### 3. Book with a non-UTC offset - expect 201 Created, startAt returned in UTC (2030-01-08T09:00:00Z)
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+
+{
+  "customerId": "{{janeSmith}}",
+  "vehicleId": "{{golf}}",
+  "dealershipId": "{{london}}",
+  "serviceTypeId": "{{oilChange}}",
+  "startAt": "2030-01-08T10:00:00+01:00"
+}
+
+### 4. Book a brake inspection (90 min) - expect 201 Created, endAt is 90 minutes after startAt
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+
+{
+  "customerId": "{{janeSmith}}",
+  "vehicleId": "{{golf}}",
+  "dealershipId": "{{london}}",
+  "serviceTypeId": "{{brakeInspection}}",
+  "startAt": "2030-01-09T09:00:00Z"
+}
+
+### 5. Same vehicle overlaps request 1 - expect 409 Conflict, problem type vehicle-already-booked
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+
+{
+  "customerId": "{{janeSmith}}",
+  "vehicleId": "{{golf}}",
+  "dealershipId": "{{london}}",
+  "serviceTypeId": "{{oilChange}}",
+  "startAt": "2030-01-07T09:30:00Z"
+}
+
+### 6. Another vehicle in the same slot takes the second general bay - expect 201 Created
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+
+{
+  "customerId": "{{janeSmith}}",
+  "vehicleId": "{{tesla}}",
+  "dealershipId": "{{london}}",
+  "serviceTypeId": "{{oilChange}}",
+  "startAt": "2030-01-07T09:00:00Z"
+}
+
+### 7. Both general bays are taken - expect 409 Conflict, problem type no-capacity, shortage bays
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+
+{
+  "customerId": "{{nguyenVanAn}}",
+  "vehicleId": "{{vinfast}}",
+  "dealershipId": "{{london}}",
+  "serviceTypeId": "{{oilChange}}",
+  "startAt": "2030-01-07T09:00:00Z"
+}
+
+### 8. Saigon has no alignment bay - expect 422 Unprocessable Entity, problem type service-not-offered
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+
+{
+  "customerId": "{{nguyenVanAn}}",
+  "vehicleId": "{{vinfast}}",
+  "dealershipId": "{{saigon}}",
+  "serviceTypeId": "{{wheelAlignment}}",
+  "startAt": "2030-01-09T03:00:00Z"
+}
+
+### 9. Jane books Nguyen Van An's vehicle - expect 422 Unprocessable Entity, problem type vehicle-not-owned
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+
+{
+  "customerId": "{{janeSmith}}",
+  "vehicleId": "{{vinfast}}",
+  "dealershipId": "{{london}}",
+  "serviceTypeId": "{{oilChange}}",
+  "startAt": "2030-01-10T09:00:00Z"
+}
+
+### 10a. Start in the past - expect 422 Unprocessable Entity, problem type invalid-start-time
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+
+{
+  "customerId": "{{janeSmith}}",
+  "vehicleId": "{{golf}}",
+  "dealershipId": "{{london}}",
+  "serviceTypeId": "{{oilChange}}",
+  "startAt": "2020-01-07T09:00:00Z"
+}
+
+### 10b. Start off the 15-minute grid (09:10 local) - expect 422 Unprocessable Entity, problem type invalid-start-time
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+
+{
+  "customerId": "{{janeSmith}}",
+  "vehicleId": "{{golf}}",
+  "dealershipId": "{{london}}",
+  "serviceTypeId": "{{oilChange}}",
+  "startAt": "2030-01-11T09:10:00Z"
+}
+
+### 11a. Sunday, the dealership is closed - expect 422 Unprocessable Entity, problem type outside-opening-hours
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+
+{
+  "customerId": "{{janeSmith}}",
+  "vehicleId": "{{golf}}",
+  "dealershipId": "{{london}}",
+  "serviceTypeId": "{{oilChange}}",
+  "startAt": "2030-01-06T10:00:00Z"
+}
+
+### 11b. 06:45 UTC is 07:45 in London (BST), before opening at 08:00 - expect 422 Unprocessable Entity, problem type outside-opening-hours
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+
+{
+  "customerId": "{{janeSmith}}",
+  "vehicleId": "{{golf}}",
+  "dealershipId": "{{london}}",
+  "serviceTypeId": "{{oilChange}}",
+  "startAt": "2030-07-01T06:45:00Z"
+}
+
+### 12a. Unknown dealership - expect 404 Not Found, problem type not-found
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+
+{
+  "customerId": "{{janeSmith}}",
+  "vehicleId": "{{golf}}",
+  "dealershipId": "00000000-0000-4000-8000-00000000dead",
+  "serviceTypeId": "{{oilChange}}",
+  "startAt": "2030-01-11T09:00:00Z"
+}
+
+### 12b. Unknown appointment - expect 404 Not Found, problem type not-found
+GET {{baseUrl}}/appointments/7c9e6679-7425-40de-944b-e07fc1f90ae7
+
+### 13a. Empty body - expect 400 Bad Request, problem type validation listing every missing field
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+
+{}
+
+### 13b. startAt without a UTC offset - expect 400 Bad Request, problem type validation
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+
+{
+  "customerId": "{{janeSmith}}",
+  "vehicleId": "{{golf}}",
+  "dealershipId": "{{london}}",
+  "serviceTypeId": "{{oilChange}}",
+  "startAt": "2030-01-07T09:00:00"
+}

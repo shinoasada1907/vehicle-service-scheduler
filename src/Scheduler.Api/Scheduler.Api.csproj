@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Scalar.AspNetCore" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Scheduler.Application\Scheduler.Application.csproj" />
+    <ProjectReference Include="..\Scheduler.Infrastructure\Scheduler.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

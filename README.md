@@ -38,22 +38,23 @@ Built for the **Keyloop Technical Assessment — Scenario A: The Unified Service
 docker compose up --build
 ```
 
-<!-- TODO: confirm ports once implemented -->
-
 | Service | URL |
 | --- | --- |
 | API | http://localhost:8080 |
-| API docs (Scalar) | http://localhost:8080/scalar |
-| Aspire Dashboard (traces, metrics, logs) | http://localhost:18888 |
+| API docs (Scalar) | http://localhost:8080/scalar/ |
 
 The database is migrated and seeded with sample dealerships, bays, technicians, customers and vehicles on startup.
 
 ### Run the API locally
 
 ```bash
-docker compose up -d postgres aspire-dashboard
+docker compose up -d postgres
 dotnet run --project src/Scheduler.Api
 ```
+
+In Visual Studio: set `Scheduler.Api` as the startup project, start PostgreSQL first with `docker compose up -d postgres`, then press F5. The `http` launch profile opens Scalar.
+
+PostgreSQL is exposed on host port 5433 by default. To change it, set `POSTGRES_PORT` in `.env` and update `ConnectionStrings__Scheduler` to the same port.
 
 ## Running tests
 
@@ -61,36 +62,126 @@ dotnet run --project src/Scheduler.Api
 dotnet test
 ```
 
-- **Unit tests** cover the core business rules (overlap detection, technician qualification, opening hours, allocation).
-- **Integration tests** use Testcontainers to start a real PostgreSQL, so Docker must be running. They include a concurrency test: several parallel requests compete for the last free slot and exactly one must succeed.
+- **Unit tests** (33) cover the core business rules (overlap detection, technician qualification, opening hours, allocation).
+- **Integration tests** (23) use Testcontainers to start a real PostgreSQL, so Docker must be running. They include a concurrency test: 12 parallel bookings compete for the London dealership's two general bays, and exactly 2 succeed while the other 10 receive `409 Conflict`.
 
 ## API usage
 
-<!-- TODO: update request/response examples once the API is implemented -->
-
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/dealerships/{id}/availability?serviceTypeId=&date=` | List free time slots |
-| POST | `/appointments` | Book an appointment (supports `Idempotency-Key`) |
+| POST | `/appointments` | Book an appointment |
 | GET | `/appointments/{id}` | Get an appointment |
-| POST | `/appointments/{id}/cancel` | Cancel an appointment |
 
-Example:
+Every error is returned as RFC 7807 Problem Details with a `traceId`. The `type` is `urn:vehicle-service-scheduler:problem:<slug>`:
+
+| Status | Problem type slug | Meaning |
+| --- | --- | --- |
+| 400 | `validation` | A field is missing or invalid (for example `startAt` without a UTC offset) |
+| 404 | `not-found` | The dealership, service type, customer, vehicle or appointment does not exist |
+| 422 | `vehicle-not-owned` | The vehicle does not belong to the customer |
+| 422 | `invalid-start-time` | The start is in the past or not on a 15-minute boundary in the dealership's local time |
+| 422 | `outside-opening-hours` | The whole service does not fit within the dealership's opening hours on one day |
+| 422 | `service-not-offered` | The dealership cannot perform this service type |
+| 409 | `no-capacity` | No compatible bay and qualified technician are free; `shortage` is `bays`, `technicians` or `bays-and-technicians` |
+| 409 | `vehicle-already-booked` | The vehicle already has an overlapping confirmed appointment |
+
+Example (ids come from [Sample data](#sample-data)):
 
 ```bash
 curl -X POST http://localhost:8080/appointments \
   -H "Content-Type: application/json" \
-  -H "Idempotency-Key: 7d1f0c2e-1b3a-4c5d-9e8f-0a1b2c3d4e5f" \
   -d '{
-        "customerId": "<customer-id>",
-        "vehicleId": "<vehicle-id>",
-        "dealershipId": "<dealership-id>",
-        "serviceTypeId": "<service-type-id>",
-        "startAt": "2026-11-05T02:00:00Z"
+        "customerId": "c0000000-0000-4000-8000-000000000001",
+        "vehicleId": "ca000000-0000-4000-8000-000000000001",
+        "dealershipId": "d0000000-0000-4000-8000-000000000001",
+        "serviceTypeId": "5e000000-0000-4000-8000-000000000001",
+        "startAt": "2030-01-07T09:00:00Z"
       }'
 ```
 
-More ready-to-run requests are in [`http/scheduler.http`](http/scheduler.http).
+Response `201 Created`, with a `Location` header pointing to the new appointment:
+
+```json
+{
+  "id": "01a19b34-c4b8-7804-a806-6ff79194872d",
+  "status": "Confirmed",
+  "customerId": "c0000000-0000-4000-8000-000000000001",
+  "vehicleId": "ca000000-0000-4000-8000-000000000001",
+  "dealership": {
+    "id": "d0000000-0000-4000-8000-000000000001",
+    "name": "Riverside Motors London",
+    "timeZone": "Europe/London"
+  },
+  "serviceType": {
+    "id": "5e000000-0000-4000-8000-000000000001",
+    "name": "Oil change",
+    "durationMinutes": 60
+  },
+  "serviceBay": { "id": "ba000000-0000-4000-8000-000000000001", "name": "London Bay 1" },
+  "technician": { "id": "7e000000-0000-4000-8000-000000000001", "name": "Alice Walker" },
+  "startAt": "2030-01-07T09:00:00+00:00",
+  "endAt": "2030-01-07T10:00:00+00:00",
+  "createdAt": "2026-11-02T07:41:29.1443702+00:00"
+}
+```
+
+More ready-to-run requests, including every error case, are in [`http/scheduler.http`](http/scheduler.http).
+
+## Sample data
+
+The seeder creates this data on startup. The ids are fixed and shared by [`http/scheduler.http`](http/scheduler.http) and the tests.
+
+**Dealerships**
+
+| Name | Id | Time zone | Opening hours (local) |
+| --- | --- | --- | --- |
+| Riverside Motors London | `d0000000-0000-4000-8000-000000000001` | `Europe/London` | Mon-Fri 08:00-18:00, Sat 09:00-13:00 |
+| Saigon Auto Service | `d0000000-0000-4000-8000-000000000002` | `Asia/Ho_Chi_Minh` | Mon-Sat 08:00-17:00 |
+
+**Service types**
+
+| Name | Id | Duration | Bay type |
+| --- | --- | --- | --- |
+| Oil change | `5e000000-0000-4000-8000-000000000001` | 60 min | General |
+| Brake inspection | `5e000000-0000-4000-8000-000000000002` | 90 min | General |
+| Wheel alignment | `5e000000-0000-4000-8000-000000000003` | 60 min | Alignment |
+| EV battery check | `5e000000-0000-4000-8000-000000000004` | 120 min | Electric vehicle |
+
+**Service bays**
+
+| Name | Dealership | Type |
+| --- | --- | --- |
+| London Bay 1 | Riverside Motors London | General |
+| London Bay 2 | Riverside Motors London | General |
+| London Alignment Bay | Riverside Motors London | Alignment |
+| London EV Bay | Riverside Motors London | Electric vehicle |
+| Saigon Bay A | Saigon Auto Service | General |
+| Saigon Bay B | Saigon Auto Service | General |
+
+**Technicians**
+
+| Name | Dealership | Qualifications |
+| --- | --- | --- |
+| Alice Walker | Riverside Motors London | Oil change, brake inspection, wheel alignment |
+| Ben Carter | Riverside Motors London | Oil change, brake inspection |
+| Chloe Evans | Riverside Motors London | Oil change, EV battery check |
+| Tran Van Minh | Saigon Auto Service | Oil change, brake inspection |
+| Le Thi Lan | Saigon Auto Service | Oil change |
+
+**Customers**
+
+| Name | Id |
+| --- | --- |
+| Jane Smith | `c0000000-0000-4000-8000-000000000001` |
+| Nguyen Van An | `c0000000-0000-4000-8000-000000000002` |
+
+**Vehicles**
+
+| Vehicle | Id | Owner |
+| --- | --- | --- |
+| Volkswagen Golf | `ca000000-0000-4000-8000-000000000001` | Jane Smith |
+| Tesla Model 3 | `ca000000-0000-4000-8000-000000000002` | Jane Smith |
+| VinFast VF 8 | `ca000000-0000-4000-8000-000000000003` | Nguyen Van An |
 
 ## Project structure
 

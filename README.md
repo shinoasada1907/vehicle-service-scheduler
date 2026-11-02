@@ -54,6 +54,8 @@ dotnet run --project src/Scheduler.Api
 
 In Visual Studio: set `Scheduler.Api` as the startup project, start PostgreSQL first with `docker compose up -d postgres`, then press F5. The `http` launch profile opens Scalar.
 
+PostgreSQL is exposed on host port 5433 by default. To change it, set `POSTGRES_PORT` in `.env` and update `ConnectionStrings__Scheduler` to the same port.
+
 ## Running tests
 
 ```bash

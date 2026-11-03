@@ -42,8 +42,11 @@ docker compose up --build
 | --- | --- |
 | API | http://localhost:8080 |
 | API docs (Scalar) | http://localhost:8080/scalar/ |
+| Aspire Dashboard (logs, traces, metrics) | http://localhost:18888 |
 
 The database is migrated and seeded with sample dealerships, bays, technicians, customers and vehicles on startup.
+
+The API port can be changed with `API_PORT` and the dashboard port with `DASHBOARD_PORT`, both in `.env` (see `.env.example`). This helps when another application already uses port 8080.
 
 ### Run the API locally
 
@@ -160,6 +163,38 @@ The real response for this day lists 37 start times, from 08:00 to 17:00 local t
 - `POST /appointments/{id}/cancel` is safe to repeat: cancelling an already cancelled appointment returns `200 OK` with the same state. A cancelled appointment frees its bay and technician.
 
 More ready-to-run requests, including every error case, are in [`http/scheduler.http`](http/scheduler.http).
+
+## Observability
+
+With Docker Compose the API sends logs, traces and metrics over OpenTelemetry (OTLP) to the Aspire Dashboard. Open http://localhost:18888 (or the port in `DASHBOARD_PORT`) after making a few requests:
+
+- **Structured logs:** JSON on the console and in the dashboard, with the trace id of the request. They contain identifiers only, never names or contact details.
+- **Traces:** one trace per request, with a span for each database call and a span for the use case: `scheduler.book`, `scheduler.reschedule` and `scheduler.cancel`. The use-case spans carry the dealership, service type, outcome and number of attempts; every lost race or deadlock adds a `conflict` event.
+- **Business metrics** (meter `Scheduler`):
+
+| Metric | Tag | Meaning |
+| --- | --- | --- |
+| `scheduler.bookings` | `outcome` | Booking requests by result: `confirmed`, `no-capacity-bays`, `no-capacity-technicians`, `no-capacity-bays-and-technicians`, `vehicle-already-booked`, `rule-violated`, `not-found` |
+| `scheduler.booking.conflicts` | `resource` | Insert attempts lost to a concurrent request: `bay`, `technician`, `deadlock` |
+| `scheduler.reschedules` | `outcome` | Reschedule requests by result |
+| `scheduler.cancellations` | `outcome` | Cancellations by result: `cancelled`, `already-cancelled`, `window-closed`, `not-found` |
+
+- **Health endpoints:** `GET /health/live` answers while the process is running; `GET /health/ready` also checks the database. Both return `200` when healthy and `503` otherwise.
+
+The API exports telemetry only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Docker Compose sets it, so tests and a plain `dotnet run` export nothing.
+
+## Deploying to production
+
+The Compose file is for local use. For a real environment:
+
+- **Environment variables:**
+  - `ConnectionStrings__Scheduler`: the production database, with its own credentials. Never use the development password.
+  - `OTEL_EXPORTER_OTLP_ENDPOINT`: an OpenTelemetry Collector, which forwards to the monitoring backend.
+  - `OTEL_SERVICE_NAME`: the service name shown in the backend (for example `scheduler-api`).
+  - `Scheduling__ChangeCutoff`: the change cut-off, for example `02:00:00`.
+- **Migrations:** set `Database__MigrateOnStartup=false` and run migrations as a step in the delivery pipeline, with `dotnet ef database update` or a migration bundle, before the new version starts.
+- **Probes:** use `/health/live` as the liveness probe and `/health/ready` as the readiness probe.
+- **Dashboard:** the Aspire Dashboard runs anonymously and is for local use only. Do not deploy it.
 
 ## Sample data
 

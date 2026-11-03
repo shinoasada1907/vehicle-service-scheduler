@@ -20,9 +20,9 @@ Task-level plan, no code written in advance. Scenarios O1–O8 are in `specs/obs
 
 ## 4. Local run and documentation 🔒
 
-- [ ] 4.1 Add the Aspire Dashboard to Docker Compose, `API_PORT` and `DASHBOARD_PORT`, JSON console logs; update `.env.example`
-- [ ] 4.2 Update the README (observability, deploying to production, ports) and `docs/system-design.md` (health paths, metric names, `API_PORT`)
-- [ ] 4.3 Verify O8 by hand on a fresh stack (dashboard resource, trace, metric, logs; health endpoints) and commit `build: run the Aspire Dashboard and document operations`
+- [x] 4.1 Add the Aspire Dashboard to Docker Compose, `API_PORT` and `DASHBOARD_PORT`, JSON console logs; update `.env.example`
+- [x] 4.2 Update the README (observability, deploying to production, ports) and `docs/system-design.md` (health paths, metric names, `API_PORT`)
+- [x] 4.3 Verify O8 by hand on a fresh stack (dashboard resource, trace, metric, logs; health endpoints) and commit `build: run the Aspire Dashboard and document operations`
 
 ## 5. Close the change
 

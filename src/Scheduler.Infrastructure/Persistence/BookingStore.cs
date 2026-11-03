@@ -68,6 +68,11 @@ public sealed class BookingStore(SchedulerDbContext db) : IBookingStore
         return new ResourceSchedule(bays, technicians, dealershipAppointments, vehicleAppointments);
     }
 
+    public Task<Appointment?> FindByIdempotencyKeyAsync(string key, CancellationToken cancellationToken) =>
+        db.Appointments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(appointment => appointment.IdempotencyKey == key, cancellationToken);
+
     public async Task<AddAppointmentResult> TryAddAsync(Appointment appointment, CancellationToken cancellationToken)
     {
         try
@@ -91,6 +96,13 @@ public sealed class BookingStore(SchedulerDbContext db) : IBookingStore
         {
             db.ChangeTracker.Clear();
             return AddAppointmentResult.Deadlocked;
+        }
+        catch (Exception exception)
+            when (AppointmentStoreSupport.FindPostgresException(exception, PostgresErrorCodes.UniqueViolation)
+                is { ConstraintName: AppointmentConstraints.IdempotencyKeyUnique })
+        {
+            db.ChangeTracker.Clear();
+            return AddAppointmentResult.IdempotencyKeyTaken;
         }
         catch (DbUpdateException exception)
             when (exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.ExclusionViolation } violation)

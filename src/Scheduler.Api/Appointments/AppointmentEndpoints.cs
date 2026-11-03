@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Scheduler.Api.Problems;
 using Scheduler.Application.Appointments;
 using Scheduler.Application.Booking;
@@ -35,12 +36,13 @@ public static class AppointmentEndpoints
 
     private static async Task<Results<Created<AppointmentDetails>, ValidationProblem, ProblemHttpResult>> BookAsync(
         BookAppointmentRequest request,
+        [FromHeader(Name = BookAppointmentRequest.IdempotencyKeyHeader)] string? idempotencyKey,
         BookAppointmentHandler handler,
         ILoggerFactory loggerFactory,
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
-        if (!request.TryCreateCommand(out var command, out var errors))
+        if (!request.TryCreateCommand(idempotencyKey, out var command, out var errors))
         {
             return TypedResults.ValidationProblem(
                 errors,
@@ -55,6 +57,8 @@ public static class AppointmentEndpoints
         return result switch
         {
             BookAppointmentResult.Booked booked => BookingConfirmed(logger, booked.Appointment),
+            BookAppointmentResult.IdempotencyKeyReused => BookingRejected(
+                logger, command.DealershipId, ProblemResults.IdempotencyKeyReused(httpContext)),
             BookAppointmentResult.NotFound notFound => BookingRejected(
                 logger, command.DealershipId, ProblemResults.NotFound(httpContext, notFound.Resource, notFound.Id)),
             BookAppointmentResult.RuleViolated violated => BookingRejected(

@@ -8,9 +8,9 @@ Scenarios I1–I6 are in `specs/idempotent-booking/spec.md`. Delegated by the ow
 
 ## 2. Idempotent booking
 
-- [ ] 2.1 Add the key to the appointment, the migration (column and unique index), the store lookup and key-collision result, the handler logic and telemetry outcomes, and the header validation and problem type in the Api
-- [ ] 2.2 Write tests: unit (I3 unchanged behaviour is covered by existing tests; I4 comparison), HTTP I1, I2, I4, I6, parallel I5
-- [ ] 2.3 Verify and commit `feat: make booking idempotent with Idempotency-Key`
+- [x] 2.1 Add the key to the appointment, the migration (column and unique index), the store lookup and key-collision result, the handler logic and telemetry outcomes, and the header validation and problem type in the Api
+- [x] 2.2 Write tests: unit (I3 unchanged behaviour is covered by existing tests; I4 comparison), HTTP I1, I2, I4, I6, parallel I5
+- [x] 2.3 Verify and commit `feat: make booking idempotent with Idempotency-Key`
 
 ## 3. Client stub and README
 

@@ -18,4 +18,6 @@ public abstract record BookAppointmentResult
     public sealed record NoCapacity(CapacityShortage Shortage) : BookAppointmentResult;
 
     public sealed record VehicleAlreadyBooked : BookAppointmentResult;
+
+    public sealed record IdempotencyKeyReused : BookAppointmentResult;
 }

@@ -95,7 +95,11 @@ public sealed class SchedulerDbContext(DbContextOptions<SchedulerDbContext> opti
                 table.HasCheckConstraint("ck_appointments_cancelled_at", "(status = 'Cancelled') = (cancelled_at IS NOT NULL)");
             });
             entity.Property(appointment => appointment.Status).HasConversion<string>().HasMaxLength(32);
+            entity.Property(appointment => appointment.IdempotencyKey).HasMaxLength(100);
             entity.HasIndex(appointment => new { appointment.DealershipId, appointment.StartAt });
+            entity.HasIndex(appointment => appointment.IdempotencyKey, AppointmentConstraints.IdempotencyKeyUnique)
+                .IsUnique()
+                .HasFilter("idempotency_key IS NOT NULL");
             entity.HasOne<Dealership>().WithMany().HasForeignKey(appointment => appointment.DealershipId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<Customer>().WithMany().HasForeignKey(appointment => appointment.CustomerId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<Vehicle>().WithMany().HasForeignKey(appointment => appointment.VehicleId).OnDelete(DeleteBehavior.Restrict);

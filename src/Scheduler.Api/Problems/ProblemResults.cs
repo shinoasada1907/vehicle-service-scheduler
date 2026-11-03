@@ -99,6 +99,14 @@ public static class ProblemResults
             "Vehicle already booked",
             "The vehicle already has a confirmed appointment that overlaps the requested time.");
 
+    public static ProblemHttpResult IdempotencyKeyReused(HttpContext httpContext) =>
+        Create(
+            httpContext,
+            StatusCodes.Status422UnprocessableEntity,
+            "idempotency-key-reused",
+            "Idempotency key reused",
+            "The Idempotency-Key was already used for a different booking request.");
+
     public static Dictionary<string, object?> TraceExtensions(HttpContext httpContext) =>
         new() { ["traceId"] = TraceId(httpContext) };
 

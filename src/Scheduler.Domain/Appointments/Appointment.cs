@@ -32,6 +32,8 @@ public sealed class Appointment
 
     public DateTimeOffset? CancelledAt { get; private set; }
 
+    public string? IdempotencyKey { get; private set; }
+
     public TimeRange Period => new(StartAt, EndAt);
 
     public static Appointment Confirm(
@@ -43,7 +45,8 @@ public sealed class Appointment
         Guid serviceBayId,
         Guid technicianId,
         TimeRange period,
-        DateTimeOffset createdAt)
+        DateTimeOffset createdAt,
+        string? idempotencyKey = null)
     {
         return new Appointment
         {
@@ -58,8 +61,21 @@ public sealed class Appointment
             EndAt = period.End,
             Status = AppointmentStatus.Confirmed,
             CreatedAt = createdAt,
+            IdempotencyKey = idempotencyKey,
         };
     }
+
+    public bool MatchesRequest(
+        Guid customerId,
+        Guid vehicleId,
+        Guid dealershipId,
+        Guid serviceTypeId,
+        DateTimeOffset startAt) =>
+        CustomerId == customerId
+        && VehicleId == vehicleId
+        && DealershipId == dealershipId
+        && ServiceTypeId == serviceTypeId
+        && StartAt == startAt;
 
     public void Cancel(DateTimeOffset now)
     {

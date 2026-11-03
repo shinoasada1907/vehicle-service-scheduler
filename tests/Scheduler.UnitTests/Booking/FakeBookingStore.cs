@@ -56,6 +56,9 @@ internal sealed class FakeBookingStore : IBookingStore
                 .ToList()));
     }
 
+    public Task<Appointment?> FindByIdempotencyKeyAsync(string key, CancellationToken cancellationToken) =>
+        Task.FromResult(Appointments.FirstOrDefault(appointment => appointment.IdempotencyKey == key));
+
     public Task<AddAppointmentResult> TryAddAsync(Appointment appointment, CancellationToken cancellationToken)
     {
         if (Conflicts.TryDequeue(out var conflict))

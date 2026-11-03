@@ -10,7 +10,7 @@
 - Current task: TASK-005 add-idempotent-booking (openspec/changes/add-idempotent-booking/tasks.md)
 - Task owner: CLAUDE
 - Reviewer: HUMAN
-- Current state: plan committed; the user asked on 2026-11-03 to finish everything that day because the submission video is recorded that evening
+- Current state: plan and task 2 committed; next is task 3 (docs) and closing; the user asked on 2026-11-03 to finish everything that day because the submission video is recorded that evening
 - Branch: feature/idempotent-booking (from main at bfdb161)
 - Files currently owned/being modified: PROJECT_STATE.md and openspec/changes/add-idempotent-booking/** (this session); src/**, tests/**, http/scheduler.http, README.md, docs/system-design.md (implementer agent, task by task)
 - Other active agents: none recorded

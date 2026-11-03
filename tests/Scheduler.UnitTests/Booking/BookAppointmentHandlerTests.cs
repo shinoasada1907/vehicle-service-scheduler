@@ -152,4 +152,28 @@ public sealed class BookAppointmentHandlerTests
         Assert.IsType<BookAppointmentResult.VehicleAlreadyBooked>(result);
         Assert.Equal(1, scenario.Store.ScheduleLoads);
     }
+
+    [Fact]
+    public async Task I4_KeyUsedForDifferentStart_IsReusedAndNothingIsInserted()
+    {
+        var scenario = new BookingScenario();
+        var original = Appointment.Confirm(
+            Guid.NewGuid(),
+            TestData.LondonId,
+            TestData.CustomerId,
+            scenario.Vehicle.Id,
+            TestData.OilChange.Id,
+            scenario.Bay1.Id,
+            scenario.Alice.Id,
+            TimeRange.FromDuration(TestData.Utc("2030-01-07T09:00:00Z"), TimeSpan.FromHours(1)),
+            TestData.Now,
+            "key-1");
+        scenario.Store.Appointments.Add(original);
+        var command = scenario.Command("2030-01-07T10:00:00Z") with { IdempotencyKey = "key-1" };
+
+        var result = await scenario.Handler().HandleAsync(command, TestContext.Current.CancellationToken);
+
+        Assert.IsType<BookAppointmentResult.IdempotencyKeyReused>(result);
+        Assert.Same(original, Assert.Single(scenario.Store.Appointments));
+    }
 }

@@ -5,4 +5,5 @@ public sealed record BookAppointmentCommand(
     Guid VehicleId,
     Guid DealershipId,
     Guid ServiceTypeId,
-    DateTimeOffset StartAt);
+    DateTimeOffset StartAt,
+    string? IdempotencyKey = null);

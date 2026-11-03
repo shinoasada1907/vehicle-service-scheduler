@@ -47,9 +47,9 @@ Steps marked 🔒 change configuration, design or documentation and need the own
 
 ## 6. Proof under concurrency
 
-- [ ] 6.1 Present the approach and get approval
-- [ ] 6.2 Write the parallel test for R10 (reschedule and booking race for the last free time), and repeat it on freshly started Docker Compose stacks
-- [ ] 6.3 Verify, get approval, commit `test: prove rescheduling never double books`
+- [x] 6.1 Present the approach and get approval
+- [x] 6.2 Write the parallel test for R10 (reschedule and booking race for the last free time), and repeat it on freshly started Docker Compose stacks
+- [x] 6.3 Verify, get approval, commit `test: prove rescheduling never double books`
 
 ## 7. Client stub and README 🔒
 

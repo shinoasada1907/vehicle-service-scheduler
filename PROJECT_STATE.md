@@ -10,9 +10,9 @@
 - Current task: TASK-003 add-cancellation-rescheduling-and-availability (8 tasks in openspec/changes/add-cancellation-rescheduling-and-availability/tasks.md)
 - Task owner: CLAUDE
 - Reviewer: HUMAN
-- Current state: tasks 1-5 committed; next is task 6 (R10 concurrency proof); on 2026-11-03 the user approved the plan and asked Claude to carry out every task to the end (implement, verify, commit, push, pull request, archive, merge) without further approval steps, stopping only on problems
+- Current state: tasks 1-6 committed; next is task 7 (client stub and README); on 2026-11-03 the user approved the plan and asked Claude to carry out every task to the end (implement, verify, commit, push, pull request, archive, merge) without further approval steps, stopping only on problems
 - Branch: feature/cancellation-rescheduling-and-availability (from main at ed989c1)
-- Files currently owned/being modified: PROJECT_STATE.md and openspec/changes/add-cancellation-rescheduling-and-availability/** (this session); tests/Scheduler.IntegrationTests/** during task 6 (implementer agent)
+- Files currently owned/being modified: PROJECT_STATE.md and openspec/changes/add-cancellation-rescheduling-and-availability/** (this session); http/scheduler.http and README.md during task 7 (implementer agent)
 - Other active agents: none recorded
 
 ## Task and file ownership

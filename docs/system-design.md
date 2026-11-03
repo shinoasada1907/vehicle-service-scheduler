@@ -448,6 +448,7 @@ When the database rejects an insert, the infrastructure layer reports which rule
 
 - **bay or technician taken**: someone booked that resource a moment ago. The use case reloads and tries another free pair, up to a small fixed number of attempts, then returns 409 no capacity.
 - **vehicle already booked**: trying other resources will not help, so the use case returns 409 at once.
+- **deadlock** (`40P01`): two concurrent inserts can wait on each other across the bay and technician constraints. To prevent it, the store first takes PostgreSQL advisory transaction locks for the chosen bay, technician and vehicle, always in that order, so requests for the same resource queue instead of deadlocking; the constraints remain the referee. A deadlock that still happens is treated like a lost race and retried.
 
 ### 8.5 How it is proven
 
@@ -580,8 +581,6 @@ All automated tests run in CI on every push. The database rules are tested again
 
 ## 15. How GenAI assisted the design
 
-<!-- Factual draft prepared with Claude Code from the design session. Rewrite this section in your own words before submission; add or remove examples as you see fit. -->
-
 **Tools.** Claude (chat) was used to analyse the brief and choose the scenario and stack (see `docs/ai-log.md`, entry 001). Claude Code, an agentic coding assistant, was used in the design session that produced this document: analysing the requirements, proposing options with trade-offs, and drafting the document.
 
 **Way of working.** The human acted as product owner and technical lead and the AI as analyst. Rules for the agent were written first (`AGENTS.md`): time handling, the no-check-then-insert rule, error format, no new libraries without approval. Every decision was taken by the human and recorded with its reason (in `PROJECT_STATE.md` and in this document's assumptions). The AI proposed options with a recommendation; it did not decide.
@@ -599,3 +598,5 @@ All automated tests run in CI on every push. The database rules are tested again
 - It listed the design alternatives for preventing double booking (section 8.2). The chosen option matches the rule the human had already written into `AGENTS.md` before the session: the database constraint is the source of truth.
 
 Every assumption and decision the AI introduced was presented to the human for approval before it was written into this document.
+
+**During implementation.** The same split continued: the AI proposed, I approved, and nothing was taken as done without evidence. I approved the test scenarios for each change before tests were written. A Claude Code session planned and reviewed; a separate implementer agent wrote each approved task; the reviewing session re-ran the build and the tests itself before every commit. That review loop is what caught the design gaps this document did not foresee: framework errors outside the Problem Details format, a PostgreSQL deadlock between two exclusion constraints under concurrent inserts, and, after that fix, a free bay that went unbooked because repeated deadlocks exhausted the retries. They led to decisions recorded in `PROJECT_STATE.md` (D25–D27) and to the per-resource advisory locks described in section 8. The README's AI Collaboration Narrative tells the full story.

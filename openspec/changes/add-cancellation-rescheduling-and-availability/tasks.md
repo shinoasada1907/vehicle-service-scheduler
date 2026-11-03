@@ -33,10 +33,10 @@ Steps marked 🔒 change configuration, design or documentation and need the own
 
 ## 4. Use cases
 
-- [ ] 4.1 Present the approach and get approval
-- [ ] 4.2 Implement the availability, alternatives, reschedule (bounded retry as booking) and cancel use cases and their ports
-- [ ] 4.3 Write unit tests with the in-memory store and controllable clock for R1, R3, R4, R5, R6, R7, R8, C1, C3, C4 and A4
-- [ ] 4.4 Verify, get approval, commit `feat(application): add availability, rescheduling and cancellation`
+- [x] 4.1 Present the approach and get approval
+- [x] 4.2 Implement the availability, alternatives, reschedule (bounded retry as booking) and cancel use cases and their ports
+- [x] 4.3 Write unit tests with the in-memory store and controllable clock for R1, R3, R4, R5, R6, R7, R8, C1, C3, C4 and A4
+- [x] 4.4 Verify, get approval, commit `feat(application): add availability, rescheduling and cancellation`
 
 ## 5. HTTP API
 

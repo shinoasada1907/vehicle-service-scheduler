@@ -19,6 +19,11 @@ public static class BookingPolicy
             return BookingRuleViolation.VehicleNotOwnedByCustomer;
         }
 
+        return CheckTiming(dealership, period, now);
+    }
+
+    public static BookingRuleViolation? CheckTiming(Dealership dealership, TimeRange period, DateTimeOffset now)
+    {
         if (period.Start <= now)
         {
             return BookingRuleViolation.StartInPast;

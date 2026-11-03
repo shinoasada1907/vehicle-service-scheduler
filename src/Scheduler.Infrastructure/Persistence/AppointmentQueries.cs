@@ -44,6 +44,7 @@ public sealed class AppointmentQueries(SchedulerDbContext db) : IAppointmentQuer
             new ResourceSummary(appointmentRow.TechnicianId, row.TechnicianName),
             appointmentRow.StartAt,
             appointmentRow.EndAt,
-            appointmentRow.CreatedAt);
+            appointmentRow.CreatedAt,
+            appointmentRow.CancelledAt);
     }
 }

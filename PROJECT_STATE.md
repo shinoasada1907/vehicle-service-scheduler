@@ -10,7 +10,7 @@
 - Current task: TASK-004 add-observability (5 tasks in openspec/changes/add-observability/tasks.md)
 - Task owner: CLAUDE
 - Reviewer: HUMAN
-- Current state: plan written and committed; on 2026-11-03 the user asked Claude to do everything that remains (this change end to end, without further approval steps); the README AI Collaboration Narrative and SDD section 15 stay the user's own work (D19)
+- Current state: plan and task 2 committed; next is task 3 (API telemetry and health); on 2026-11-03 the user asked Claude to do everything that remains (this change end to end, without further approval steps); the README AI Collaboration Narrative and SDD section 15 stay the user's own work (D19)
 - Branch: feature/observability (from main at 398dc07)
 - Files currently owned/being modified: PROJECT_STATE.md and openspec/changes/add-observability/** (this session); src/** and tests/** during tasks 2-3 and docker-compose.yml, .env.example, README.md, docs/system-design.md during task 4 (implementer agent)
 - Other active agents: none recorded

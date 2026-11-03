@@ -8,9 +8,9 @@ Task-level plan, no code written in advance. Scenarios O1–O8 are in `specs/obs
 
 ## 2. Business instrumentation
 
-- [ ] 2.1 Add `SchedulerTelemetry` (activity source and meter `Scheduler`) and instrument the booking, reschedule and cancel use cases
-- [ ] 2.2 Write unit tests for O4, O5, O6, O7 with `MeterListener` and `ActivityListener`
-- [ ] 2.3 Verify and commit `feat(application): record business metrics and traces`
+- [x] 2.1 Add `SchedulerTelemetry` (activity source and meter `Scheduler`) and instrument the booking, reschedule and cancel use cases
+- [x] 2.2 Write unit tests for O4, O5, O6, O7 with `MeterListener` and `ActivityListener`
+- [x] 2.3 Verify and commit `feat(application): record business metrics and traces`
 
 ## 3. Telemetry, logs and health in the API 🔒
 

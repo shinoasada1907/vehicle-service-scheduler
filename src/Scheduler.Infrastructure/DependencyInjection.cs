@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Scheduler.Application.Appointments;
 using Scheduler.Application.Booking;
+using Scheduler.Application.Changes;
 using Scheduler.Infrastructure.Persistence;
 using Scheduler.Infrastructure.Seeding;
 
@@ -16,6 +17,7 @@ public static class DependencyInjection
         services.AddDbContext<SchedulerDbContext>((provider, options) =>
             options.UseNpgsql(connectionString(provider)));
         services.AddScoped<IBookingStore, BookingStore>();
+        services.AddScoped<IAppointmentChangeStore, AppointmentChangeStore>();
         services.AddScoped<IAppointmentQueries, AppointmentQueries>();
 
         return services;

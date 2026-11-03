@@ -74,7 +74,12 @@ public sealed class BookingStore(SchedulerDbContext db) : IBookingStore
         {
             await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-            await LockResourcesAsync(appointment, cancellationToken);
+            await AppointmentStoreSupport.LockResourcesAsync(
+                db,
+                appointment.ServiceBayId,
+                appointment.TechnicianId,
+                appointment.VehicleId,
+                cancellationToken);
 
             db.Appointments.Add(appointment);
             await db.SaveChangesAsync(cancellationToken);
@@ -82,7 +87,7 @@ public sealed class BookingStore(SchedulerDbContext db) : IBookingStore
             return AddAppointmentResult.Added;
         }
         catch (Exception exception)
-            when (FindPostgresException(exception, PostgresErrorCodes.DeadlockDetected) is not null)
+            when (AppointmentStoreSupport.FindPostgresException(exception, PostgresErrorCodes.DeadlockDetected) is not null)
         {
             db.ChangeTracker.Clear();
             return AddAppointmentResult.Deadlocked;
@@ -92,41 +97,12 @@ public sealed class BookingStore(SchedulerDbContext db) : IBookingStore
         {
             db.ChangeTracker.Clear();
 
-            return violation.ConstraintName switch
+            return AppointmentStoreSupport.ToConflictingResource(violation, exception) switch
             {
-                AppointmentConstraints.BayNoOverlap => AddAppointmentResult.BayTaken,
-                AppointmentConstraints.TechnicianNoOverlap => AddAppointmentResult.TechnicianTaken,
-                AppointmentConstraints.VehicleNoOverlap => AddAppointmentResult.VehicleTaken,
-                _ => throw new InvalidOperationException(
-                    $"Unexpected exclusion constraint '{violation.ConstraintName}'.",
-                    exception),
+                ConflictingResource.Bay => AddAppointmentResult.BayTaken,
+                ConflictingResource.Technician => AddAppointmentResult.TechnicianTaken,
+                _ => AddAppointmentResult.VehicleTaken,
             };
         }
-    }
-
-    private async Task LockResourcesAsync(Appointment appointment, CancellationToken cancellationToken)
-    {
-        await db.Database.ExecuteSqlAsync(
-            $"SELECT pg_advisory_xact_lock(hashtextextended('bay:' || {appointment.ServiceBayId}::text, 0))",
-            cancellationToken);
-        await db.Database.ExecuteSqlAsync(
-            $"SELECT pg_advisory_xact_lock(hashtextextended('technician:' || {appointment.TechnicianId}::text, 0))",
-            cancellationToken);
-        await db.Database.ExecuteSqlAsync(
-            $"SELECT pg_advisory_xact_lock(hashtextextended('vehicle:' || {appointment.VehicleId}::text, 0))",
-            cancellationToken);
-    }
-
-    private static PostgresException? FindPostgresException(Exception exception, string sqlState)
-    {
-        for (var current = exception; current is not null; current = current.InnerException)
-        {
-            if (current is PostgresException postgresException && postgresException.SqlState == sqlState)
-            {
-                return postgresException;
-            }
-        }
-
-        return null;
     }
 }

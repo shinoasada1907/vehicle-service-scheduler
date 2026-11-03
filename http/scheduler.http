@@ -201,3 +201,72 @@ Content-Type: application/json
   "serviceTypeId": "{{oilChange}}",
   "startAt": "2030-01-07T09:00:00"
 }
+
+### Availability, rescheduling and cancellation (requests 14-26)
+# These use dates that requests 1-13 leave free, so they are deterministic on a fresh database.
+# The change-window-closed problem (changes within the 2-hour cut-off, Scheduling:ChangeCutoff)
+# cannot be shown here, because these fixed 2030 dates are never within 2 hours of "now".
+
+### 14. Free slots for an oil change on a Monday - expect 200 OK, 37 slots (08:00 to 17:00 every 15 minutes)
+GET {{baseUrl}}/dealerships/{{london}}/availability?serviceTypeId={{oilChange}}&date=2030-01-14
+
+### 15. Sunday, the dealership is closed - expect 200 OK, empty slots
+GET {{baseUrl}}/dealerships/{{london}}/availability?serviceTypeId={{oilChange}}&date=2030-01-13
+
+### 16. Saigon cannot perform wheel alignment - expect 422 Unprocessable Entity, problem type service-not-offered
+GET {{baseUrl}}/dealerships/{{saigon}}/availability?serviceTypeId={{wheelAlignment}}&date=2030-01-14
+
+### 17. Date in the wrong format - expect 400 Bad Request, problem type validation
+GET {{baseUrl}}/dealerships/{{london}}/availability?serviceTypeId={{oilChange}}&date=14/01/2030
+
+### 18. Book an appointment to change later - expect 201 Created
+# @name toMove
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+
+{
+  "customerId": "{{janeSmith}}",
+  "vehicleId": "{{golf}}",
+  "dealershipId": "{{london}}",
+  "serviceTypeId": "{{oilChange}}",
+  "startAt": "2030-01-15T09:00:00Z"
+}
+
+### 19. Alternative start times for it - expect 200 OK, 09:30 is listed (its own slot counts as free)
+GET {{baseUrl}}/appointments/{{toMove.response.body.$.id}}/alternatives?date=2030-01-15
+
+### 20. Reschedule to 09:30 - expect 200 OK, same id, startAt 2030-01-15T09:30:00Z
+POST {{baseUrl}}/appointments/{{toMove.response.body.$.id}}/reschedule
+Content-Type: application/json
+
+{
+  "startAt": "2030-01-15T09:30:00Z"
+}
+
+### 21. Reschedule to 07:00, before opening - expect 422 Unprocessable Entity, problem type outside-opening-hours
+POST {{baseUrl}}/appointments/{{toMove.response.body.$.id}}/reschedule
+Content-Type: application/json
+
+{
+  "startAt": "2030-01-15T07:00:00Z"
+}
+
+### 22. Cancel it - expect 200 OK, status Cancelled with cancelledAt set
+POST {{baseUrl}}/appointments/{{toMove.response.body.$.id}}/cancel
+
+### 23. Cancel it again - expect 200 OK, same state (cancelling twice is safe)
+POST {{baseUrl}}/appointments/{{toMove.response.body.$.id}}/cancel
+
+### 24. Reschedule the cancelled appointment - expect 422 Unprocessable Entity, problem type appointment-cancelled
+POST {{baseUrl}}/appointments/{{toMove.response.body.$.id}}/reschedule
+Content-Type: application/json
+
+{
+  "startAt": "2030-01-15T10:00:00Z"
+}
+
+### 25. Alternatives for the cancelled appointment - expect 422 Unprocessable Entity, problem type appointment-cancelled
+GET {{baseUrl}}/appointments/{{toMove.response.body.$.id}}/alternatives?date=2030-01-15
+
+### 26. Cancel an unknown appointment - expect 404 Not Found, problem type not-found
+POST {{baseUrl}}/appointments/7c9e6679-7425-40de-944b-e07fc1f90ae7/cancel

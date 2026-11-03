@@ -16,7 +16,8 @@ public sealed record AppointmentDetails(
     ResourceSummary Technician,
     DateTimeOffset StartAt,
     DateTimeOffset EndAt,
-    DateTimeOffset CreatedAt)
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? CancelledAt)
 {
     public static AppointmentDetails From(
         Appointment appointment,
@@ -34,7 +35,8 @@ public sealed record AppointmentDetails(
             new ResourceSummary(technician.Id, technician.Name),
             appointment.StartAt,
             appointment.EndAt,
-            appointment.CreatedAt);
+            appointment.CreatedAt,
+            appointment.CancelledAt);
 }
 
 public sealed record DealershipSummary(Guid Id, string Name, string TimeZone);

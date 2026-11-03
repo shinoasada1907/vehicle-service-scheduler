@@ -30,6 +30,10 @@ namespace Scheduler.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cancelled_at");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -88,6 +92,8 @@ namespace Scheduler.Infrastructure.Persistence.Migrations
 
                     b.ToTable("appointments", null, t =>
                         {
+                            t.HasCheckConstraint("ck_appointments_cancelled_at", "(status = 'Cancelled') = (cancelled_at IS NOT NULL)");
+
                             t.HasCheckConstraint("ck_appointments_end_after_start", "end_at > start_at");
                         });
                 });

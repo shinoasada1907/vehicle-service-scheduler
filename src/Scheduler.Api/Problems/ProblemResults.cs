@@ -48,6 +48,27 @@ public static class ProblemResults
         return Create(httpContext, StatusCodes.Status422UnprocessableEntity, slug, title, detail);
     }
 
+    public static ProblemHttpResult ChangeRuleViolated(
+        HttpContext httpContext,
+        ChangeRuleViolation violation,
+        TimeSpan cutoff)
+    {
+        var (slug, title, detail) = violation switch
+        {
+            ChangeRuleViolation.ChangeWindowClosed => (
+                "change-window-closed",
+                "Change window closed",
+                $"Appointments can be changed or cancelled only more than {DescribeCutoff(cutoff)} before they start."),
+            ChangeRuleViolation.AppointmentCancelled => (
+                "appointment-cancelled",
+                "Appointment cancelled",
+                "The appointment has been cancelled and can no longer be changed."),
+            _ => throw new ArgumentOutOfRangeException(nameof(violation), violation, null),
+        };
+
+        return Create(httpContext, StatusCodes.Status422UnprocessableEntity, slug, title, detail);
+    }
+
     public static ProblemHttpResult NoCapacity(HttpContext httpContext, CapacityShortage shortage)
     {
         var shortageName = shortage switch
@@ -128,6 +149,18 @@ public static class ProblemResults
         {
             problem.Detail = problem.Title;
         }
+    }
+
+    private static string DescribeCutoff(TimeSpan cutoff)
+    {
+        if (cutoff.TotalHours >= 1 && cutoff.TotalHours % 1 == 0)
+        {
+            var hours = (int)cutoff.TotalHours;
+            return hours == 1 ? "1 hour" : $"{hours} hours";
+        }
+
+        var minutes = (int)Math.Ceiling(cutoff.TotalMinutes);
+        return minutes == 1 ? "1 minute" : $"{minutes} minutes";
     }
 
     private static string TraceId(HttpContext httpContext) =>

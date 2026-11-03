@@ -89,7 +89,11 @@ public sealed class SchedulerDbContext(DbContextOptions<SchedulerDbContext> opti
 
         modelBuilder.Entity<Appointment>(entity =>
         {
-            entity.ToTable("appointments", table => table.HasCheckConstraint("ck_appointments_end_after_start", "end_at > start_at"));
+            entity.ToTable("appointments", table =>
+            {
+                table.HasCheckConstraint("ck_appointments_end_after_start", "end_at > start_at");
+                table.HasCheckConstraint("ck_appointments_cancelled_at", "(status = 'Cancelled') = (cancelled_at IS NOT NULL)");
+            });
             entity.Property(appointment => appointment.Status).HasConversion<string>().HasMaxLength(32);
             entity.HasIndex(appointment => new { appointment.DealershipId, appointment.StartAt });
             entity.HasOne<Dealership>().WithMany().HasForeignKey(appointment => appointment.DealershipId).OnDelete(DeleteBehavior.Restrict);

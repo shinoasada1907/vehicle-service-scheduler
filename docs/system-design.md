@@ -74,9 +74,9 @@ Only the backend is implemented. The client is stubbed with an interactive OpenA
 | Priority | Capability |
 | --- | --- |
 | **Must** | Book an appointment with the bay + qualified technician check (AC1–AC3). Read an appointment back. No double booking under concurrent requests. Tests for the core business rules and the concurrency guarantee. Client stub. One-command local run. This document. |
-| **Should** | Look up free start times for a dealership, service type and day. Cancel an appointment, which frees its slot. Observability working in the demo (logs, metrics, traces). Continuous integration (build and test on every push). |
+| **Should** | Look up free start times for a dealership, service type and day. Suggest alternative times for an existing appointment. Cancel an appointment, which frees its slot. Reschedule an appointment: move it to another time in one step. A change cut-off: cancelling and rescheduling are allowed only while the appointment starts more than the cut-off from now. Observability working in the demo (logs, metrics, traces). Continuous integration (build and test on every push). |
 | **Could** | Idempotent booking: a client that retries the same request does not create two appointments. |
-| **Won't (this version)** | Authentication and authorisation, a real user interface, notifications, rescheduling as a single operation, technician shifts and leave, tracking the actual execution of a job (see section 12). |
+| **Won't (this version)** | Authentication and authorisation, a real user interface, notifications, moving an appointment to another dealership or service, technician shifts and leave, tracking the actual execution of a job (see section 12). |
 
 ## 3. Assumptions
 
@@ -94,10 +94,10 @@ The brief is intentionally ambiguous. These assumptions were agreed before desig
 | A8 | The start time must be in the future and on a 15-minute grid. | Avoids odd start times and keeps the availability list readable. |
 | A9 | Dealerships, bays, technicians, service types, customers and vehicles are reference data seeded at start-up; there is no API to manage them. The vehicle must belong to the customer making the booking. | Managing master data is outside the brief. |
 | A10 | When several bays or technicians are free, the first one in a fixed order is chosen. | Deterministic and testable. Load balancing is future work. |
-| A11 | Cancelling keeps the record with status Cancelled and frees the slot. Rescheduling is cancel + book. | Keeps history; a cancelled appointment must not block anyone. |
+| A11 | Cancelling keeps the record with status Cancelled and frees the slot. Rescheduling moves the appointment to another start time in one atomic step, keeping its id; it is not cancel + book. | Keeps history; a cancelled appointment must not block anyone. With cancel + book the customer could lose the old slot and then find the new one taken; a single step either moves the appointment or leaves it untouched. |
 | A12 | Errors: a malformed request is 400, an unknown reference is 404, a broken business rule is 422, and no capacity or a conflict is 409. All errors use the RFC 7807 Problem Details format. | Lets clients tell "fix your request" apart from "try another time". |
 | A13 | A vehicle cannot have two overlapping active appointments, even at different dealerships. | A car cannot be in two workshops at once. Not stated in the brief, but required for data to make sense. |
-| A14 | Only appointments that have not started can be cancelled. Cancelling an already cancelled appointment returns its current state. | Prevents rewriting history and makes cancel safe to retry. |
+| A14 | An appointment can be cancelled or rescheduled only while it starts more than the change cut-off from now (configurable, default 2 hours). Cancelling an already cancelled appointment returns its current state. | The workshop needs time to react, and started appointments must not be rewritten. Making cancel return the current state makes it safe to retry. |
 | A15 | The availability lookup takes a date in the dealership's local calendar. Past dates return no slots. | Customers think in local days. |
 | A16 | Idempotency keys are global because there is no client identity yet. Clients should use UUIDs. | Becomes per-client once authentication exists. |
 | A17 | Bays and technicians are independent pools within a dealership: any technician can work in any bay. | The brief treats them as separate resources. Some workshops assign a technician to a fixed lift; that would be a different model. |
@@ -167,7 +167,7 @@ flowchart TB
 | --- | --- | --- |
 | **Client stub** (Scalar UI, `http/scheduler.http`) | Lets a reviewer or integrator call every endpoint and see the contract. | Contain business logic. |
 | **API layer** (`Scheduler.Api`) | HTTP endpoints; request validation; mapping use-case outcomes to HTTP status codes and Problem Details; OpenAPI document; telemetry set-up; wiring of all components. | Make business decisions. |
-| **Application layer** (`Scheduler.Application`) | Use cases: book, get, cancel, availability. Loads what a decision needs, asks the domain to decide, persists the result, and retries when another request took the chosen resource. Defines the persistence ports. | Know about HTTP, SQL or the database driver. |
+| **Application layer** (`Scheduler.Application`) | Use cases: book, get, cancel, reschedule, availability, alternatives. Loads what a decision needs, asks the domain to decide, persists the result, and retries when another request took the chosen resource. Defines the persistence ports. | Know about HTTP, SQL or the database driver. |
 | **Domain layer** (`Scheduler.Domain`) | Business concepts and rules: time ranges and overlap, opening hours in local time, technician qualification, bay compatibility, choosing a free bay and technician, the appointment lifecycle. | Depend on any framework or library. |
 | **Infrastructure layer** (`Scheduler.Infrastructure`) | Persistence with EF Core; schema migrations including the no-overlap rules; seed data; translating a database rule violation into a domain outcome ("bay taken", "technician taken", "vehicle already booked"). | Make business decisions. |
 | **PostgreSQL** | Source of truth for all data. Enforces that active appointments never overlap for the same bay, technician or vehicle. | — |
@@ -253,7 +253,8 @@ erDiagram
 ```mermaid
 stateDiagram-v2
     [*] --> Confirmed : booked
-    Confirmed --> Cancelled : cancelled before start
+    Confirmed --> Cancelled : cancelled more than the cut-off before start
+    Confirmed --> Confirmed : rescheduled more than the cut-off before start
     Cancelled --> [*]
 ```
 
@@ -268,6 +269,8 @@ Only **Confirmed** appointments occupy resources. The lifecycle is designed to g
 | POST | `/appointments` | Book an appointment. Optional `Idempotency-Key` header. | Must (header: Could) |
 | GET | `/appointments/{id}` | Read an appointment back. | Must |
 | GET | `/dealerships/{id}/availability?serviceTypeId=&date=` | List free start times for one local day. | Should |
+| GET | `/appointments/{id}/alternatives?date=` | List free start times for an existing appointment on a local day (default: its own day). | Should |
+| POST | `/appointments/{id}/reschedule` | Move an appointment to a new start time in one step. | Should |
 | POST | `/appointments/{id}/cancel` | Cancel an appointment and free its slot. | Should |
 
 ### 7.2 Booking
@@ -343,17 +346,60 @@ The rejection names the bottleneck. A customer only needs to know the slot is ta
 ### 7.3 Availability lookup
 
 1. Load the dealership's opening hours for the requested local date, the compatible bays, the qualified technicians and the confirmed appointments of that day.
-2. Generate candidate start times every 15 minutes, from opening time to closing time minus the service duration, skipping times already in the past.
-3. Keep a candidate only if the **same rule used for booking** finds a free bay and a free technician for its whole range.
+2. Generate candidate start times every 15 minutes, from opening time to closing time minus the service duration, dropping every start time that is not after the current time.
+3. Keep a candidate only if the **same allocator used for booking** finds a free bay and a free technician for its whole range. Availability and booking therefore cannot disagree.
 4. Return the free start and end times in UTC, with the dealership's time zone so the client can show local times.
+
+Edge cases: a past date or a day on which the dealership is closed returns **200 with an empty list**, not an error. If the dealership has no compatible bay or no qualified technician at all, the answer is **422 service not offered**, detected once before the candidates are generated and the same answer booking gives. A missing or malformed `date` is **400**; an unknown dealership or service type is **404**.
 
 The result is a snapshot, not a reservation. A booking for a listed time can still be rejected if someone else books it first; the client then refreshes the list.
 
+**Alternatives for an existing appointment.** `GET /appointments/{id}/alternatives?date=` reuses the same calculation with two adjustments: the appointment's own bay, technician and time count as free (so moving it 30 minutes later, which overlaps its current range, is offered), and any start time that overlaps another confirmed appointment of the same vehicle that day is dropped. The date defaults to the appointment's own local date. The change rules apply: a cancelled appointment or one inside the cut-off gives 422.
+
 ### 7.4 Cancellation
 
-The appointment's status changes from Confirmed to Cancelled and the cancellation time is recorded. Because only confirmed appointments occupy resources, the bay, technician and vehicle are immediately free for that range. Appointments that have already started cannot be cancelled (A14).
+The status changes from Confirmed to Cancelled and the cancellation time is recorded, in a single conditional update: the row is changed only if it is still Confirmed and starts more than the change cut-off from now (A14). The database row decides, so a cancellation racing with a reschedule or another cancellation cannot both win. If no row was changed, the use case reloads the appointment and answers: not found (404), already cancelled (200 with its current state, so a retry is safe) or too late (422 change window closed).
 
-### 7.5 Idempotent booking (Could)
+Because only confirmed appointments occupy resources, cancelled rows never block anyone: the bay, technician and vehicle are free for that range at once.
+
+### 7.5 Rescheduling
+
+Rescheduling moves a confirmed appointment to a new start time in one step. Only the time changes: the dealership, service type, customer and vehicle stay, and the id stays, so references to the appointment remain valid. The bay and technician are chosen again with the booking rule and may differ from before.
+
+1. **Load and check the change rules.** The appointment must be Confirmed (a cancelled one gives 422 appointment cancelled) and must start more than the change cut-off from now (otherwise 422 change window closed).
+2. **Check the booking rules for the new range.** The new start must be in the future, on the 15-minute grid and, with the duration, inside opening hours (422 otherwise).
+3. **Allocate without its own row.** The day's schedule is loaded **without the appointment itself**, so its old range does not block the new one: moving 09:00 to 09:30 is possible. The allocator picks a free bay and technician.
+4. **Update in place, in one transaction.** The store takes the advisory locks for the new bay, technician and vehicle, in the same order as booking, then runs a conditional update that changes the start, end, bay and technician only if the row is still Confirmed, still starts at the old time and is still outside the cut-off. The exclusion constraints compare the new range with every **other** row, so the appointment's own old range never conflicts.
+5. **Retry like booking.** If another request took the bay or technician (`23P01`) or the database detected a deadlock, the use case reloads and tries again within the same bounded number of attempts. If the vehicle has another appointment at the new time the answer is 409 at once. If the conditional update changed no row, the use case reloads and reports the current reason (cancelled, window closed) or, when someone else moved the appointment meanwhile, retries.
+
+If the move fails for any reason the transaction rolls back and the appointment is exactly as it was. A new start time equal to the current one is a no-op: 200 with the current state and no write. The old time is free for others as soon as the move commits.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant U as Reschedule use case
+    participant DB as PostgreSQL
+
+    C->>U: POST /appointments/id/reschedule (new start)
+    U->>DB: Load appointment
+    U->>U: Check status, cut-off and booking rules for the new range
+    U->>DB: Load the day's schedule without this appointment
+    U->>U: Choose a free bay and technician
+    U->>DB: Begin transaction, take advisory locks, conditional update
+    alt row updated
+        DB-->>U: Committed
+        U-->>C: 200 with the moved appointment
+    else bay or technician taken a moment ago
+        DB-->>U: No-overlap rule violated, rolled back
+        U->>U: Reload and try again (bounded number of attempts)
+    else vehicle already booked at the new time
+        DB-->>U: No-overlap rule violated, rolled back
+        U-->>C: 409 vehicle already booked, appointment unchanged
+    end
+```
+
+### 7.6 Idempotent booking (Could)
 
 A client may send an `Idempotency-Key` header. If an appointment was already created with that key and the same request data, the original appointment is returned instead of creating a new one. If the key was used with different data, the request is rejected. This protects against duplicate bookings when a client retries after a timeout.
 
@@ -426,7 +472,7 @@ The goal is to answer four questions at any time: **Is booking working? How fast
 ### 10.1 Logs
 
 - Structured logs (JSON in containers), every entry carrying the trace id of its request.
-- Key events: appointment confirmed, booking rejected with its reason, conflict retry with the resource that was taken, appointment cancelled, unhandled errors with their exception.
+- Key events: appointment confirmed, booking rejected with its reason, conflict retry with the resource that was taken, appointment cancelled, appointment rescheduled, unhandled errors with their exception.
 - No personal data in logs: identifiers only, never names, e-mail addresses or phone numbers.
 
 ### 10.2 Traces
@@ -511,7 +557,7 @@ stateDiagram-v2
 
 | Level | What is covered | How |
 | --- | --- | --- |
-| **Unit** (no infrastructure, fast) | Time range overlap and half-open boundaries; opening hours in local time, including daylight-saving changes and different time zones; technician qualification and bay compatibility; choosing a free bay and technician; the booking use case's decisions and every rejection path, including retry after a conflict; availability slot generation; cancellation rules. | xUnit with in-memory fakes for the persistence ports and a controllable clock. |
+| **Unit** (no infrastructure, fast) | Time range overlap and half-open boundaries; opening hours in local time, including daylight-saving changes and different time zones; technician qualification and bay compatibility; choosing a free bay and technician; the booking use case's decisions and every rejection path, including retry after a conflict; availability slot generation; cancellation and rescheduling rules, including the change cut-off. | xUnit with in-memory fakes for the persistence ports and a controllable clock. |
 | **Integration** (real PostgreSQL) | The three no-overlap rules: overlap rejected, back-to-back accepted, cancelled appointments ignored. The HTTP API end to end: status codes, response bodies, Problem Details. The **concurrency test** described in section 8.5. | Testcontainers starts PostgreSQL in Docker; the API runs in the ASP.NET Core test host. |
 | **Manual and demo** | The full flow through the Scalar UI and the `.http` file; telemetry in the Aspire Dashboard. | Docker Compose. |
 
@@ -521,11 +567,11 @@ All automated tests run in CI on every push. The database rules are tested again
 
 - **Authentication and authorisation**: OAuth 2.0 / OpenID Connect; service advisors limited to their dealership; idempotency keys scoped per client.
 - **Notifications**: confirmation and reminder messages, published through an outbox so they are never lost or sent twice.
-- **Rescheduling** as one atomic operation instead of cancel + book.
+- **Rescheduling across dealerships or services**, and a per-dealership change cut-off.
 - **Technician shifts, breaks and leave**, as blocks of unavailable time on the technician's schedule.
 - **Execution tracking and reassignment**, as described in section 12.
 - **Smarter allocation**: balance load across technicians, or keep versatile technicians free for jobs only they can do.
-- **Alternative suggestions** in a 409 response (the nearest free times).
+- **Alternative suggestions** inside a 409 response (the nearest free times), instead of a separate lookup.
 - **Scale-out measures**: availability caching, read replicas, partitioning by dealership.
 - **Cloud deployment** with infrastructure as code (for example AWS ECS + RDS + CloudWatch/X-Ray).
 

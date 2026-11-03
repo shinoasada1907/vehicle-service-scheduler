@@ -20,8 +20,13 @@ public static class DependencyInjection
         services.AddScoped<IAppointmentChangeStore, AppointmentChangeStore>();
         services.AddScoped<IAppointmentQueries, AppointmentQueries>();
 
+        services.AddHealthChecks()
+            .AddDbContextCheck<SchedulerDbContext>(tags: [ReadyHealthTag]);
+
         return services;
     }
+
+    public const string ReadyHealthTag = "ready";
 
     public static async Task MigrateAndSeedAsync(this IServiceProvider services, CancellationToken cancellationToken)
     {

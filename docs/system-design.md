@@ -157,7 +157,7 @@ flowchart TB
 
 ### 4.4 Deployment
 
-**Local and demo.** Docker Compose starts three containers: the API, PostgreSQL and the Aspire Dashboard. On start-up the API applies database migrations and seeds sample data, so a reviewer can call it immediately.
+**Local and demo.** Docker Compose starts three containers: the API, PostgreSQL and the Aspire Dashboard. By default the API listens on host port 8080 (`API_PORT`) and the dashboard on 18888 (`DASHBOARD_PORT`). On start-up the API applies database migrations and seeds sample data, so a reviewer can call it immediately.
 
 **Target production shape.** Several API containers behind a load balancer (for example AWS ECS or EKS behind an Application Load Balancer), a managed PostgreSQL with high availability (Amazon RDS or Aurora, multi-AZ), and an OpenTelemetry Collector forwarding telemetry to the organisation's monitoring backend. Migrations run as a separate step in the delivery pipeline rather than at application start-up. No code changes are needed to move from the local shape to this one.
 
@@ -478,7 +478,7 @@ The goal is to answer four questions at any time: **Is booking working? How fast
 ### 10.2 Traces
 
 - Every request is traced: the HTTP request span, a span for the use case, and a span for each database call.
-- The booking span carries the dealership, service type, outcome and number of attempts. Conflict retries are recorded as span events.
+- The use cases are traced as `scheduler.book`, `scheduler.reschedule` and `scheduler.cancel`. The booking span carries the dealership, service type, outcome and number of attempts. Conflict retries are recorded as span events named `conflict`.
 - Error responses include the trace id, so a support engineer can go from a customer's error straight to the trace.
 
 ### 10.3 Metrics
@@ -487,13 +487,14 @@ The goal is to answer four questions at any time: **Is booking working? How fast
 | --- | --- | --- |
 | Request rate, latency percentiles, error rate | Built-in ASP.NET Core instrumentation | Health and speed of the API |
 | Database call duration and connection use | Database driver instrumentation | Whether the database is the bottleneck |
-| Bookings by outcome: confirmed, no bay, no technician, vehicle already booked, rule violated | Custom business metric | Demand that could not be served, and whether bays or technicians are the constraint |
-| Booking conflicts by resource | Custom business metric | How often concurrent requests race for the same resource |
-| Cancellations | Custom business metric | Churn of the schedule |
+| `scheduler.bookings`, tag `outcome`: confirmed, no capacity (bays, technicians or both), vehicle already booked, rule violated, not found | Custom business metric | Demand that could not be served, and whether bays or technicians are the constraint |
+| `scheduler.booking.conflicts`, tag `resource`: bay, technician, deadlock | Custom business metric | How often concurrent requests race for the same resource |
+| `scheduler.reschedules`, tag `outcome` | Custom business metric | How often appointments move, and why a move fails |
+| `scheduler.cancellations`, tag `outcome` | Custom business metric | Churn of the schedule |
 
 ### 10.4 Health checks
 
-A **liveness** endpoint reports that the process is running; a **readiness** endpoint also checks that the database is reachable. Container orchestrators use them to restart unhealthy instances and to route traffic only to ready ones.
+A **liveness** endpoint (`/health/live`) reports that the process is running; a **readiness** endpoint (`/health/ready`) also checks that the database is reachable. Both return `200` when healthy and `503` otherwise. Container orchestrators use them to restart unhealthy instances and to route traffic only to ready ones.
 
 ### 10.5 From demo to production
 

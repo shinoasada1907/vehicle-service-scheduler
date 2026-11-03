@@ -18,5 +18,5 @@ Scenarios I1–I6 are in `specs/idempotent-booking/spec.md`. Delegated by the ow
 
 ## 4. Close the change
 
-- [ ] 4.1 Opus review of the whole diff; pull request; CI green
+- [x] 4.1 Opus review of the whole diff; pull request; CI green
 - [ ] 4.2 Archive on the branch, then merge with a merge commit (left unticked on purpose: the merge commit on `main` is the evidence)

@@ -4,7 +4,7 @@ Backend API for booking vehicle service appointments with real-time availability
 
 Built for the **Keyloop Technical Assessment — Scenario A: The Unified Service Scheduler**.
 
-<!-- TODO: add CI badge once .github/workflows/ci.yml exists -->
+[![CI](https://github.com/shinoasada1907/vehicle-service-scheduler/actions/workflows/ci.yml/badge.svg)](https://github.com/shinoasada1907/vehicle-service-scheduler/actions/workflows/ci.yml)
 
 ## Overview
 
@@ -286,28 +286,49 @@ Key decisions:
 
 ## AI Collaboration Narrative
 
-<!-- Write this section in your own words. Use concrete examples from docs/ai-log.md. -->
+I built this project with AI as a team of agents and kept the decisions, the scenarios and the final check for myself. The full trail is in [`PROJECT_STATE.md`](PROJECT_STATE.md) (decisions D1–D31 with their evidence), the OpenSpec records in [`openspec/`](openspec/) and [`docs/ai-log.md`](docs/ai-log.md). I drafted this section with Claude Code from those records and then reviewed it.
 
 ### Tools
 
-<!-- Which AI tools you used and for what (design review, code generation, tests, docs). -->
+- **Claude (chat)** to analyse the brief and pick the scenario and stack.
+- **Claude Code** for everything after that, in two roles: an **Opus** session as manager (requirements, design options, task plans, review, re-running build and tests, recording state) and a **Sonnet** implementer agent (code and tests for one approved task at a time, reporting back with real output).
+- **OpenSpec** to keep one record per change: proposal, design decisions, the approved test scenarios and a task-level plan, archived into [`openspec/specs/`](openspec/specs/) when the change is merged.
+- **Testcontainers, Docker Compose and GitHub Actions** as the independent judges of whether the code works.
 
 ### Strategy for guiding the AI
 
-<!-- e.g. spec and test cases first, AGENTS.md rules, small tasks, one change per prompt. -->
+- **Rules first.** [`AGENTS.md`](AGENTS.md) fixes the non-negotiables before any code: UTC and half-open ranges, no check-then-insert (the database constraint is the referee), Problem Details for every error, `CancellationToken` everywhere, no new packages without approval.
+- **Direction before detail.** The first design pass went straight to constraints and libraries. I stopped it and we agreed on the brief, scope and direction first, then the system design, then detailed design per task.
+- **I own the test scenarios.** For each change I approved a plain list of scenarios (S1–S31 for booking, 29 for changes) before any test was written; tests cover exactly those, and anything extra needed my approval.
+- **Small, verifiable steps.** One task per request, one green commit per task, one pull request per change, merged with a merge commit so the history shows the process.
+- **A working mode that matches trust.** I started in AUTO mode and switched to HYBRID (D16) when the AI moved ahead of what we had agreed: code-level design before direction, a plan with pre-written code, demos nobody asked for. In HYBRID the AI writes approved feature code; design, tests, configuration and documentation need my permission. For the last two changes I delegated more (D30, D31) and had every choice recorded so I could check it.
 
 ### Verification and refinement
 
-<!-- How you checked AI output: code review of every diff, tests, running the app, checking docs. -->
+- The reviewing session reads every changed file against the approved approach and **re-runs `dotnet build` and `dotnet test` itself** before a commit; the implementer's report is never taken as proof.
+- Concurrency is proven, not assumed: parallel-request tests in the suite, repeated many times, plus runs on freshly started Docker Compose stacks.
+- Every request in [`http/scheduler.http`](http/scheduler.http) was sent in order against a fresh stack and compared with its expected status and problem type.
+- The whole diff of each pull request is reviewed before merge, and CI must be green on the final commit and again on `main` after the merge.
 
 ### Where the AI was wrong and how I caught it
 
-<!-- 2–4 real examples from docs/ai-log.md: what it produced, how you noticed, what you changed. -->
+1. **Error format that broke the spec.** In the review of the first feature pull request, sending a malformed GUID returned a framework error with an RFC link as `type`, no `detail` and a different `traceId` format, which breaks scenario S31. All framework errors are now normalised to the project format (D25).
+2. **500s under concurrency.** The parallel booking test failed now and then. Reproducing it on Docker Compose showed 2 of 15 rounds answering 500 instead of 409; the log said `40P01 deadlock detected`, which the code did not handle because it only expected `23P01` (D26). The first fix removed the 500s but revealed a second problem: on a freshly started stack only one of two free bays got booked, because repeated deadlocks used up every request's three attempts. Per-resource advisory locks taken in a fixed order removed the deadlocks entirely; 12 out of 12 rounds were then correct (D27).
+3. **A red commit avoided.** Adding the `Cancelled` status changed the EF model without a migration, and 25 integration tests failed. The migration was moved into the same task so that every commit stays green.
+4. **A race the first design missed.** The first version of idempotent booking returned 409 to some of five parallel identical requests, because PostgreSQL can report a bay, technician or vehicle conflict before the key conflict. The replay check now runs on those paths too.
+5. **Process slips.** The AI once delegated with a model alias that pointed to an older model than intended, and an implementer started Docker Desktop on its own. I tightened the agent definition (pinned model and effort) and the task briefs.
 
 ### Ensuring final quality
 
-<!-- Test coverage of core logic, CI, final manual review, what you rewrote by hand. -->
-
+- **130 tests** (67 unit, 63 integration against real PostgreSQL), including three concurrency proofs; CI runs them on every push and pull request.
+- Every scenario I approved maps to at least one test; the mapping is in each archived `tasks.md`.
+- Decisions, deviations from the plan (struck through with the reason) and verification evidence are recorded in `PROJECT_STATE.md` and the OpenSpec records, so the reasoning survives after the code.
+- Final manual check: the whole stack started from `main` with one command, health checks green, the dashboard receiving traces, metrics and logs.
 ## Future improvements
 
-<!-- e.g. authentication, notifications via outbox events, caching availability, multi-tenant partitioning, AWS deployment. -->
+- **Authentication and authorisation** (OAuth 2.0 / OpenID Connect): advisors limited to their dealership, idempotency keys scoped per client.
+- **Notifications** through an outbox (confirmation, reminder, change).
+- **Technician shifts and leave**, and tracking jobs that finish early or late with reassignment (system design, section 12).
+- **Smarter allocation**: balance load, keep versatile technicians free for jobs only they can do.
+- **Scale-out**: availability caching, read replicas, partitioning by dealership.
+- **Cloud deployment** with infrastructure as code (for example AWS ECS, RDS and CloudWatch/X-Ray via an OpenTelemetry Collector).

@@ -403,6 +403,8 @@ sequenceDiagram
 
 A client may send an `Idempotency-Key` header. If an appointment was already created with that key and the same request data, the original appointment is returned instead of creating a new one. If the key was used with different data, the request is rejected. This protects against duplicate bookings when a client retries after a timeout.
 
+A replay returns `201 Created` with the same body and `Location` as the original response. Reuse with different data returns `422` with the problem type `idempotency-key-reused`. A unique index on the key decides between concurrent duplicates, so only one appointment is created. A key must be 1 to 100 visible ASCII characters, otherwise the request is rejected with `400` `validation`.
+
 ## 8. Preventing double booking
 
 ### 8.1 The race

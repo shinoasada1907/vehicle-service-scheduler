@@ -14,7 +14,7 @@ Scenarios I1–I6 are in `specs/idempotent-booking/spec.md`. Delegated by the ow
 
 ## 3. Client stub and README
 
-- [ ] 3.1 Add the replay and reuse requests to `http/scheduler.http`, document the header in the README and SDD §7.6; verify on a fresh stack; commit `docs: document idempotent booking`
+- [x] 3.1 Add the replay and reuse requests to `http/scheduler.http`, document the header in the README and SDD §7.6; verify on a fresh stack; commit `docs: document idempotent booking`
 
 ## 4. Close the change
 

@@ -270,3 +270,59 @@ GET {{baseUrl}}/appointments/{{toMove.response.body.$.id}}/alternatives?date=203
 
 ### 26. Cancel an unknown appointment - expect 404 Not Found, problem type not-found
 POST {{baseUrl}}/appointments/7c9e6679-7425-40de-944b-e07fc1f90ae7/cancel
+
+### Idempotent booking (requests 27-30)
+# Uses Monday 2030-01-21, which requests 1-26 leave free. Keep the key 3f1b2c9e-... for requests 27-29.
+
+### 27. Book with an Idempotency-Key - expect 201 Created with a Location header
+# @name keyed
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+Idempotency-Key: 3f1b2c9e-7a54-4d1e-9c2b-5b8f0e6a1d27
+
+{
+  "customerId": "{{janeSmith}}",
+  "vehicleId": "{{golf}}",
+  "dealershipId": "{{london}}",
+  "serviceTypeId": "{{oilChange}}",
+  "startAt": "2030-01-21T09:00:00Z"
+}
+
+### 28. Retry the identical request - expect 201 Created, same id and Location as request 27 (a replay, no second appointment)
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+Idempotency-Key: 3f1b2c9e-7a54-4d1e-9c2b-5b8f0e6a1d27
+
+{
+  "customerId": "{{janeSmith}}",
+  "vehicleId": "{{golf}}",
+  "dealershipId": "{{london}}",
+  "serviceTypeId": "{{oilChange}}",
+  "startAt": "2030-01-21T09:00:00Z"
+}
+
+### 29. Same key with a different start (10:00) - expect 422 Unprocessable Entity, problem type idempotency-key-reused
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+Idempotency-Key: 3f1b2c9e-7a54-4d1e-9c2b-5b8f0e6a1d27
+
+{
+  "customerId": "{{janeSmith}}",
+  "vehicleId": "{{golf}}",
+  "dealershipId": "{{london}}",
+  "serviceTypeId": "{{oilChange}}",
+  "startAt": "2030-01-21T10:00:00Z"
+}
+
+### 30. Key longer than 100 characters (101) - expect 400 Bad Request, problem type validation
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+Idempotency-Key: kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+
+{
+  "customerId": "{{janeSmith}}",
+  "vehicleId": "{{golf}}",
+  "dealershipId": "{{london}}",
+  "serviceTypeId": "{{oilChange}}",
+  "startAt": "2030-01-21T11:00:00Z"
+}

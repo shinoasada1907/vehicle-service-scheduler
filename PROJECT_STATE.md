@@ -10,7 +10,7 @@
 - Current task: TASK-005 add-idempotent-booking (openspec/changes/add-idempotent-booking/tasks.md)
 - Task owner: CLAUDE
 - Reviewer: HUMAN
-- Current state: plan and task 2 committed; next is task 3 (docs) and closing; the user asked on 2026-11-03 to finish everything that day because the submission video is recorded that evening
+- Current state: tasks 1-3 committed and the change archived on the branch; pull request #5 opened and merged after green CI; the user asked on 2026-11-03 to finish everything that day because the submission video is recorded that evening
 - Branch: feature/idempotent-booking (from main at bfdb161)
 - Files currently owned/being modified: PROJECT_STATE.md and openspec/changes/add-idempotent-booking/** (this session); src/**, tests/**, http/scheduler.http, README.md, docs/system-design.md (implementer agent, task by task)
 - Other active agents: none recorded
@@ -33,7 +33,7 @@
 | TASK-002 add-appointment-booking, tasks 10.6-10.9 and 11 | CLAUDE (scheduler-implementer agent, claude-sonnet-5-5 at medium effort; Opus session reviews, verifies, records state, archives and merges) | HUMAN | HYBRID (each fix approved by the user on 2026-11-02, D25-D28; the user then asked Claude to finish without further approval steps) | DONE except the merge, which follows the push | src/Scheduler.Api/{Program.cs,Problems/ProblemResults.cs}, src/Scheduler.Application/Booking/{IBookingStore.cs,BookAppointmentHandler.cs}, src/Scheduler.Infrastructure/Persistence/BookingStore.cs, tests (E5, E6, E7), docker-compose.yml, .env.example, appsettings.Development.json, README.md (subagent); design.md, tasks.md, openspec/specs/**, openspec/changes/archive/**, PROJECT_STATE.md (this session) | 2026-11-02 |
 | TASK-003 add-cancellation-rescheduling-and-availability | CLAUDE (scheduler-implementer agent, claude-sonnet-5-5 at medium effort, implements; Opus session plans, reviews, verifies and records state) | HUMAN | HYBRID (plan, scenarios and every task approved by the user on 2026-11-03, D29) | DONE (merged as 398dc07, PR #3; CI on main green) | see Files currently owned above | 2026-11-03 |
 | TASK-004 add-observability | CLAUDE (scheduler-implementer agent, claude-sonnet-5-5 at medium effort, implements; Opus session plans, reviews, verifies and records state) | HUMAN | HYBRID (the user delegated every decision and approval of this change to Claude on 2026-11-03, D30) | DONE (merged as bfdb161, PR #4; CI on main green) | see Files currently owned above | 2026-11-03 |
-| TASK-005 add-idempotent-booking | CLAUDE (scheduler-implementer agent, claude-sonnet-5-5 at medium effort, implements; Opus session plans, reviews, verifies and records state) | HUMAN | HYBRID (delegated to Claude, D30 and D31) | IN PROGRESS | see Files currently owned above | 2026-11-03 |
+| TASK-005 add-idempotent-booking | CLAUDE (scheduler-implementer agent, claude-sonnet-5-5 at medium effort, implements; Opus session plans, reviews, verifies and records state) | HUMAN | HYBRID (delegated to Claude, D30 and D31) | DONE except the merge, which follows the push | see Files currently owned above | 2026-11-03 |
 
 ## Completed work
 

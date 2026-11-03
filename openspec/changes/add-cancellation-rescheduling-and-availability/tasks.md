@@ -40,10 +40,10 @@ Steps marked 🔒 change configuration, design or documentation and need the own
 
 ## 5. HTTP API
 
-- [ ] 5.1 Present the approach and get approval
-- [ ] 5.2 🔒 Add the four endpoints, query and body validation, the new Problem Details types, and `Scheduling:ChangeCutoff` in `appsettings.json`
-- [ ] 5.3 Write HTTP tests for V1, V3, V5, V7, V8, A1, A3, A4, R1, R2, R3, R7, R9, C1, C2, C3, C4, C5, X1, X2
-- [ ] 5.4 Verify, get approval, commit `feat(api): add availability, rescheduling and cancellation endpoints`
+- [x] 5.1 Present the approach and get approval
+- [x] 5.2 🔒 Add the four endpoints, query and body validation, the new Problem Details types, and `Scheduling:ChangeCutoff` in `appsettings.json`
+- [x] 5.3 Write HTTP tests for V1, V3, V5, V7, V8, A1, A3, A4, R1, R2, R3, R7, R9, C1, C2, C3, C4, C5, X1, X2
+- [x] 5.4 Verify, get approval, commit `feat(api): add availability, rescheduling and cancellation endpoints`
 
 ## 6. Proof under concurrency
 

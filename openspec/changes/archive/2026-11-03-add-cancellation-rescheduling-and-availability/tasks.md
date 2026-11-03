@@ -59,5 +59,5 @@ Steps marked 🔒 change configuration, design or documentation and need the own
 
 ## 8. Close the change
 
-- [ ] 8.1 Opus review of the whole pull request diff; open the pull request after the owner's approval; CI green
-- [ ] 8.2 Archive with `openspec archive add-cancellation-rescheduling-and-availability -y` on the branch, then merge with a merge commit after the owner's approval
+- [x] 8.1 Opus review of the whole pull request diff; open the pull request after the owner's approval; CI green (the owner asked on 2026-11-03 to finish without further approval steps, D29)
+- [ ] 8.2 Archive with `openspec archive add-cancellation-rescheduling-and-availability -y` on the branch, then merge with a merge commit (left unticked on purpose: the merge happens after this file is archived; the merge commit on `main` is the evidence)

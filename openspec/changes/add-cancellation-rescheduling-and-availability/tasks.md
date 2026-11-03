@@ -26,10 +26,10 @@ Steps marked 🔒 change configuration, design or documentation and need the own
 
 ## 3. Persistence
 
-- [ ] 3.1 Present the approach and get approval
-- [ ] 3.2 🔒 ~~Add the migration (`cancelled_at`, check constraint) and~~ Add the store operations (the migration moved to 2.2, see the reason there): load a dealership-day schedule (optionally without one appointment, plus the vehicle's appointments), cancel by conditional update, move by advisory locks plus conditional update with the exclusion and deadlock handling of booking
-- [ ] 3.3 Write database tests for C3 (repeat cancel through the store), V3 (a cancelled row does not block a new insert) and the move keeping the row unchanged when the update is rejected (R3 at database level)
-- [ ] 3.4 Verify, get approval, commit `feat(infrastructure): store cancellations and moves`
+- [x] 3.1 Present the approach and get approval
+- [x] 3.2 🔒 ~~Add the migration (`cancelled_at`, check constraint) and~~ Add the store operations (the migration moved to 2.2, see the reason there): load a dealership-day schedule (optionally without one appointment, plus the vehicle's appointments), cancel by conditional update, move by advisory locks plus conditional update with the exclusion and deadlock handling of booking
+- [x] 3.3 Write database tests for C3 (repeat cancel through the store), V3 (a cancelled row does not block a new insert) and the move keeping the row unchanged when the update is rejected (R3 at database level)
+- [x] 3.4 Verify, get approval, commit `feat(infrastructure): store cancellations and moves`
 
 ## 4. Use cases
 

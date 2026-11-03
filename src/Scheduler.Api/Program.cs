@@ -1,12 +1,43 @@
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Metrics;
+using Npgsql;
+using OpenTelemetry;
 using Scalar.AspNetCore;
 using Scheduler.Api.Appointments;
 using Scheduler.Api.Problems;
+using Scheduler.Application;
 using Scheduler.Application.Booking;
 using Scheduler.Application.Changes;
 using Scheduler.Domain.Scheduling;
 using Scheduler.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.AddOpenTelemetry(options =>
+{
+    options.IncludeFormattedMessage = true;
+    options.IncludeScopes = true;
+});
+
+var telemetry = builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService(
+        builder.Configuration["OTEL_SERVICE_NAME"] ?? "scheduler-api"))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation(options => options.Filter = IsBusinessRequest)
+        .AddNpgsql()
+        .AddSource(SchedulerTelemetry.Name))
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddNpgsqlInstrumentation()
+        .AddMeter(SchedulerTelemetry.Name));
+
+if (!string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]))
+{
+    telemetry.UseOtlpExporter();
+}
 
 builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = ProblemResults.Normalize);
 builder.Services.AddOpenApi();
@@ -30,6 +61,12 @@ app.UseStatusCodePages();
 
 app.MapOpenApi();
 app.MapScalarApiReference();
+app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false })
+    .ExcludeFromDescription();
+app.MapHealthChecks(
+        "/health/ready",
+        new HealthCheckOptions { Predicate = check => check.Tags.Contains(DependencyInjection.ReadyHealthTag) })
+    .ExcludeFromDescription();
 app.MapAppointmentEndpoints();
 app.MapAvailabilityEndpoints();
 
@@ -39,6 +76,14 @@ if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 }
 
 await app.RunAsync();
+
+static bool IsBusinessRequest(HttpContext context)
+{
+    var path = context.Request.Path;
+    return !path.StartsWithSegments("/health")
+        && !path.StartsWithSegments("/scalar")
+        && !path.StartsWithSegments("/openapi");
+}
 
 static SchedulingRules ReadSchedulingRules(IConfiguration configuration)
 {

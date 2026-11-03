@@ -14,9 +14,9 @@ Task-level plan, no code written in advance. Scenarios O1–O8 are in `specs/obs
 
 ## 3. Telemetry, logs and health in the API 🔒
 
-- [ ] 3.1 Add the approved packages; register OpenTelemetry (export only when configured), key-event logs, `/health/live` and `/health/ready`
-- [ ] 3.2 Write HTTP tests for O1, O2, O3
-- [ ] 3.3 Verify and commit `feat(api): export telemetry and expose health checks`
+- [x] 3.1 Add the approved packages; register OpenTelemetry (export only when configured), key-event logs, `/health/live` and `/health/ready`
+- [x] 3.2 Write HTTP tests for O1, O2, O3
+- [x] 3.3 Verify and commit `feat(api): export telemetry and expose health checks`
 
 ## 4. Local run and documentation 🔒
 

@@ -53,9 +53,9 @@ Steps marked 🔒 change configuration, design or documentation and need the own
 
 ## 7. Client stub and README 🔒
 
-- [ ] 7.1 Present the changes and get permission
-- [ ] 7.2 Add the new requests to `http/scheduler.http` and the endpoints, errors and cut-off to the README
-- [ ] 7.3 Verify every new request against a fresh stack, get approval, commit `docs: document availability, rescheduling and cancellation`
+- [x] 7.1 Present the changes and get permission
+- [x] 7.2 Add the new requests to `http/scheduler.http` and the endpoints, errors and cut-off to the README
+- [x] 7.3 Verify every new request against a fresh stack, get approval, commit `docs: document availability, rescheduling and cancellation`
 
 ## 8. Close the change
 

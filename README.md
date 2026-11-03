@@ -62,8 +62,8 @@ PostgreSQL is exposed on host port 5433 by default. To change it, set `POSTGRES_
 dotnet test
 ```
 
-- **Unit tests** (33) cover the core business rules (overlap detection, technician qualification, opening hours, allocation).
-- **Integration tests** (23) use Testcontainers to start a real PostgreSQL, so Docker must be running. They include a concurrency test: 12 parallel bookings compete for the London dealership's two general bays, and exactly 2 succeed while the other 10 receive `409 Conflict`.
+- **Unit tests** (62) cover the core business rules (overlap detection, technician qualification, opening hours, allocation, change cut-off, availability).
+- **Integration tests** (55) use Testcontainers to start a real PostgreSQL, so Docker must be running. They include two concurrency tests. In the first, 12 parallel bookings compete for the London dealership's two general bays, and exactly 2 succeed while the other 10 receive `409 Conflict`. In the second, a reschedule and a new booking race for the last free time, and exactly one wins.
 
 ## API usage
 
@@ -71,6 +71,10 @@ dotnet test
 | --- | --- | --- |
 | POST | `/appointments` | Book an appointment |
 | GET | `/appointments/{id}` | Get an appointment |
+| GET | `/dealerships/{id}/availability?serviceTypeId=&date=` | List the free start times for a service on a day (`date` is `yyyy-MM-dd`, in the dealership's local time) |
+| GET | `/appointments/{id}/alternatives?date=` | List free start times for an existing appointment's service (`date` is optional) |
+| POST | `/appointments/{id}/reschedule` | Move an appointment to a new `startAt` |
+| POST | `/appointments/{id}/cancel` | Cancel an appointment |
 
 Every error is returned as RFC 7807 Problem Details with a `traceId`. The `type` is `urn:vehicle-service-scheduler:problem:<slug>`:
 
@@ -82,6 +86,8 @@ Every error is returned as RFC 7807 Problem Details with a `traceId`. The `type`
 | 422 | `invalid-start-time` | The start is in the past or not on a 15-minute boundary in the dealership's local time |
 | 422 | `outside-opening-hours` | The whole service does not fit within the dealership's opening hours on one day |
 | 422 | `service-not-offered` | The dealership cannot perform this service type |
+| 422 | `change-window-closed` | The appointment starts within the change cut-off (2 hours by default), so it can no longer be rescheduled or cancelled |
+| 422 | `appointment-cancelled` | The appointment is cancelled, so it can no longer be rescheduled and has no alternatives |
 | 409 | `no-capacity` | No compatible bay and qualified technician are free; `shortage` is `bays`, `technicians` or `bays-and-technicians` |
 | 409 | `vehicle-already-booked` | The vehicle already has an overlapping confirmed appointment |
 
@@ -124,6 +130,34 @@ Response `201 Created`, with a `Location` header pointing to the new appointment
   "createdAt": "2026-11-02T07:41:29.1443702+00:00"
 }
 ```
+
+### Changing an appointment
+
+The recommended flow is to look at the free start times first, then reschedule to one of them, or cancel:
+
+```bash
+curl "http://localhost:8080/dealerships/d0000000-0000-4000-8000-000000000001/availability?serviceTypeId=5e000000-0000-4000-8000-000000000001&date=2030-01-14"
+```
+
+```json
+{
+  "dealershipId": "d0000000-0000-4000-8000-000000000001",
+  "serviceTypeId": "5e000000-0000-4000-8000-000000000001",
+  "date": "2030-01-14",
+  "timeZone": "Europe/London",
+  "slots": [
+    { "startAt": "2030-01-14T08:00:00+00:00", "endAt": "2030-01-14T09:00:00+00:00" },
+    { "startAt": "2030-01-14T08:15:00+00:00", "endAt": "2030-01-14T09:15:00+00:00" }
+  ]
+}
+```
+
+The real response for this day lists 37 start times, from 08:00 to 17:00 local time.
+
+- `GET /appointments/{id}/alternatives` returns the same shape for an existing appointment. Its own time counts as free, so it can be moved by a few minutes.
+- `POST /appointments/{id}/reschedule` with `{ "startAt": "..." }` keeps the appointment id. The move is atomic: if the new time cannot be allocated, the appointment stays exactly where it was.
+- An appointment can be changed or cancelled only more than 2 hours before it starts; later changes return `change-window-closed`. Change the cut-off with the `Scheduling:ChangeCutoff` setting, or the environment variable `Scheduling__ChangeCutoff` (for example `Scheduling__ChangeCutoff=04:00:00`).
+- `POST /appointments/{id}/cancel` is safe to repeat: cancelling an already cancelled appointment returns `200 OK` with the same state. A cancelled appointment frees its bay and technician.
 
 More ready-to-run requests, including every error case, are in [`http/scheduler.http`](http/scheduler.http).
 

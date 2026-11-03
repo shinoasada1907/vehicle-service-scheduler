@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using Scheduler.Application.Appointments;
 using Scheduler.Domain.Appointments;
+using Scheduler.Domain.Catalog;
+using Scheduler.Domain.Dealerships;
 using Scheduler.Domain.Scheduling;
 
 namespace Scheduler.Application.Booking;
@@ -18,6 +20,11 @@ public sealed class BookAppointmentHandler(IBookingStore store, TimeProvider clo
         activity?.SetTag("scheduler.service_type_id", command.ServiceTypeId);
         activity?.SetTag("scheduler.attempts", 0);
 
+        if (command.IdempotencyKey is not null)
+        {
+            activity?.SetTag("scheduler.idempotent", true);
+        }
+
         var (result, outcome) = await BookAsync(command, activity, cancellationToken);
 
         activity?.SetTag("scheduler.outcome", outcome);
@@ -32,6 +39,34 @@ public sealed class BookAppointmentHandler(IBookingStore store, TimeProvider clo
         CapacityShortage.Technicians => "no-capacity-technicians",
         _ => "no-capacity-bays-and-technicians",
     };
+
+    private async Task<(BookAppointmentResult Result, string Outcome)?> ReplayAsync(
+        BookAppointmentCommand command,
+        Dealership dealership,
+        ServiceType serviceType,
+        CancellationToken cancellationToken)
+    {
+        if (command.IdempotencyKey is not { } key
+            || await store.FindByIdempotencyKeyAsync(key, cancellationToken) is not { } existing)
+        {
+            return null;
+        }
+
+        if (!existing.MatchesRequest(
+                command.CustomerId, command.VehicleId, command.DealershipId, command.ServiceTypeId, command.StartAt))
+        {
+            return (new BookAppointmentResult.IdempotencyKeyReused(), "idempotency-key-reused");
+        }
+
+        var schedule = await store.LoadScheduleAsync(
+            existing.DealershipId, existing.VehicleId, existing.Period, cancellationToken);
+        var bay = schedule.Bays.Single(candidate => candidate.Id == existing.ServiceBayId);
+        var technician = schedule.Technicians.Single(candidate => candidate.Id == existing.TechnicianId);
+
+        return (
+            new BookAppointmentResult.Booked(AppointmentDetails.From(existing, dealership, serviceType, bay, technician)),
+            "replayed");
+    }
 
     private async Task<(BookAppointmentResult Result, string Outcome)> BookAsync(
         BookAppointmentCommand command,
@@ -60,6 +95,11 @@ public sealed class BookAppointmentHandler(IBookingStore store, TimeProvider clo
             return (new BookAppointmentResult.NotFound("vehicle", command.VehicleId), "not-found");
         }
 
+        if (await ReplayAsync(command, dealership, serviceType, cancellationToken) is { } replay)
+        {
+            return replay;
+        }
+
         var now = clock.GetUtcNow();
         var period = TimeRange.FromDuration(command.StartAt.ToUniversalTime(), serviceType.Duration);
 
@@ -76,7 +116,8 @@ public sealed class BookAppointmentHandler(IBookingStore store, TimeProvider clo
 
             if (schedule.ConfirmedVehicleAppointments.Any(existing => existing.Period.Overlaps(period)))
             {
-                return (new BookAppointmentResult.VehicleAlreadyBooked(), "vehicle-already-booked");
+                return await ReplayAsync(command, dealership, serviceType, cancellationToken)
+                    ?? (new BookAppointmentResult.VehicleAlreadyBooked(), "vehicle-already-booked");
             }
 
             var allocation = ResourceAllocator.Allocate(
@@ -105,7 +146,8 @@ public sealed class BookAppointmentHandler(IBookingStore store, TimeProvider clo
                 allocated.Bay.Id,
                 allocated.Technician.Id,
                 period,
-                now);
+                now,
+                command.IdempotencyKey);
 
             activity?.SetTag("scheduler.attempts", attempt);
 
@@ -117,7 +159,11 @@ public sealed class BookAppointmentHandler(IBookingStore store, TimeProvider clo
                             appointment, dealership, serviceType, allocated.Bay, allocated.Technician)),
                         "confirmed");
                 case AddAppointmentResult.VehicleTaken:
-                    return (new BookAppointmentResult.VehicleAlreadyBooked(), "vehicle-already-booked");
+                    return await ReplayAsync(command, dealership, serviceType, cancellationToken)
+                        ?? (new BookAppointmentResult.VehicleAlreadyBooked(), "vehicle-already-booked");
+                case AddAppointmentResult.IdempotencyKeyTaken:
+                    return await ReplayAsync(command, dealership, serviceType, cancellationToken)
+                        ?? throw new InvalidOperationException("The idempotency key is taken but no appointment holds it.");
                 case AddAppointmentResult.BayTaken:
                     lostRaceFor = CapacityShortage.Bays;
                     SchedulerTelemetry.RecordConflict(activity, "bay");

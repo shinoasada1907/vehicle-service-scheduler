@@ -50,6 +50,11 @@ namespace Scheduler.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("end_at");
 
+                    b.Property<string>("IdempotencyKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("idempotency_key");
+
                     b.Property<Guid>("ServiceBayId")
                         .HasColumnType("uuid")
                         .HasColumnName("service_bay_id");
@@ -89,6 +94,10 @@ namespace Scheduler.Infrastructure.Persistence.Migrations
                     b.HasIndex("VehicleId");
 
                     b.HasIndex("DealershipId", "StartAt");
+
+                    b.HasIndex(new[] { "IdempotencyKey" }, "ux_appointments_idempotency_key")
+                        .IsUnique()
+                        .HasFilter("idempotency_key IS NOT NULL");
 
                     b.ToTable("appointments", null, t =>
                         {

@@ -7,4 +7,6 @@ public static class AppointmentConstraints
     public const string TechnicianNoOverlap = "ex_appointments_technician_no_overlap";
 
     public const string VehicleNoOverlap = "ex_appointments_vehicle_no_overlap";
+
+    public const string IdempotencyKeyUnique = "ux_appointments_idempotency_key";
 }

@@ -65,14 +65,14 @@ PostgreSQL is exposed on host port 5433 by default. To change it, set `POSTGRES_
 dotnet test
 ```
 
-- **Unit tests** (62) cover the core business rules (overlap detection, technician qualification, opening hours, allocation, change cut-off, availability).
-- **Integration tests** (55) use Testcontainers to start a real PostgreSQL, so Docker must be running. They include two concurrency tests. In the first, 12 parallel bookings compete for the London dealership's two general bays, and exactly 2 succeed while the other 10 receive `409 Conflict`. In the second, a reschedule and a new booking race for the last free time, and exactly one wins.
+- **Unit tests** (67) cover the core business rules (overlap detection, technician qualification, opening hours, allocation, change cut-off, availability).
+- **Integration tests** (63) use Testcontainers to start a real PostgreSQL, so Docker must be running. They include two concurrency tests. In the first, 12 parallel bookings compete for the London dealership's two general bays, and exactly 2 succeed while the other 10 receive `409 Conflict`. In the second, a reschedule and a new booking race for the last free time, and exactly one wins.
 
 ## API usage
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| POST | `/appointments` | Book an appointment |
+| POST | `/appointments` | Book an appointment; optional `Idempotency-Key` header for safe retries |
 | GET | `/appointments/{id}` | Get an appointment |
 | GET | `/dealerships/{id}/availability?serviceTypeId=&date=` | List the free start times for a service on a day (`date` is `yyyy-MM-dd`, in the dealership's local time) |
 | GET | `/appointments/{id}/alternatives?date=` | List free start times for an existing appointment's service (`date` is optional) |
@@ -91,8 +91,11 @@ Every error is returned as RFC 7807 Problem Details with a `traceId`. The `type`
 | 422 | `service-not-offered` | The dealership cannot perform this service type |
 | 422 | `change-window-closed` | The appointment starts within the change cut-off (2 hours by default), so it can no longer be rescheduled or cancelled |
 | 422 | `appointment-cancelled` | The appointment is cancelled, so it can no longer be rescheduled and has no alternatives |
+| 422 | `idempotency-key-reused` | The `Idempotency-Key` was already used with different request data |
 | 409 | `no-capacity` | No compatible bay and qualified technician are free; `shortage` is `bays`, `technicians` or `bays-and-technicians` |
 | 409 | `vehicle-already-booked` | The vehicle already has an overlapping confirmed appointment |
+
+**Safe retries.** Send a UUID in the `Idempotency-Key` header of `POST /appointments`. A retry with the same key and the same data returns the original appointment with `201 Created` and the same `Location`, and creates nothing new. The same key with different data returns `422` `idempotency-key-reused`. Keys are global for now (there is no authentication) and do not expire. Concurrent duplicates create exactly one appointment. A key must be 1 to 100 visible ASCII characters, otherwise the response is `400` `validation`.
 
 Example (ids come from [Sample data](#sample-data)):
 

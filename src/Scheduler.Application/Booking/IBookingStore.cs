@@ -17,6 +17,8 @@ public interface IBookingStore
         TimeRange period,
         CancellationToken cancellationToken);
 
+    Task<Appointment?> FindByIdempotencyKeyAsync(string key, CancellationToken cancellationToken);
+
     Task<AddAppointmentResult> TryAddAsync(Appointment appointment, CancellationToken cancellationToken);
 }
 
@@ -39,4 +41,5 @@ public enum AddAppointmentResult
     TechnicianTaken,
     VehicleTaken,
     Deadlocked,
+    IdempotencyKeyTaken,
 }

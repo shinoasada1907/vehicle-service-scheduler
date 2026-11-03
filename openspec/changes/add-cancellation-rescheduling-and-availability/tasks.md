@@ -19,15 +19,15 @@ Steps marked 🔒 change configuration, design or documentation and need the own
 
 ## 2. Change rules and availability in the domain
 
-- [ ] 2.1 Present the approach and get approval
-- [ ] 2.2 Add the `Cancelled` status and cancellation time to `Appointment`, the change policy (cancelled, cut-off), `SchedulingRules`, and the availability calculator that reuses `ResourceAllocator` (with the alternatives adjustments)
-- [ ] 2.3 Write unit tests for V1, V2, V4, V5, V6 and A1, A2 at the domain level, and for the change policy behind R6, C4 and X1
-- [ ] 2.4 Verify, get approval, commit `feat(domain): add change rules and availability`
+- [x] 2.1 Present the approach and get approval
+- [x] 2.2 Add the `Cancelled` status and cancellation time to `Appointment`, the change policy (cancelled, cut-off), `SchedulingRules`, and the availability calculator that reuses `ResourceAllocator` (with the alternatives adjustments), plus the EF mapping and migration for `cancelled_at` moved here from 3.2. **Reason:** the new status and property change the EF model; without the migration the integration tests fail with `PendingModelChangesWarning` (25 failures observed), and every commit must be green (D14).
+- [x] 2.3 Write unit tests for V1, V2, V4, V5, V6 and A1, A2 at the domain level, and for the change policy behind R6, C4 and X1
+- [x] 2.4 Verify, get approval, commit `feat(domain): add change rules and availability`
 
 ## 3. Persistence
 
 - [ ] 3.1 Present the approach and get approval
-- [ ] 3.2 🔒 Add the migration (`cancelled_at`, check constraint) and the store operations: load a dealership-day schedule (optionally without one appointment, plus the vehicle's appointments), cancel by conditional update, move by advisory locks plus conditional update with the exclusion and deadlock handling of booking
+- [ ] 3.2 🔒 ~~Add the migration (`cancelled_at`, check constraint) and~~ Add the store operations (the migration moved to 2.2, see the reason there): load a dealership-day schedule (optionally without one appointment, plus the vehicle's appointments), cancel by conditional update, move by advisory locks plus conditional update with the exclusion and deadlock handling of booking
 - [ ] 3.3 Write database tests for C3 (repeat cancel through the store), V3 (a cancelled row does not block a new insert) and the move keeping the row unchanged when the update is rejected (R3 at database level)
 - [ ] 3.4 Verify, get approval, commit `feat(infrastructure): store cancellations and moves`
 

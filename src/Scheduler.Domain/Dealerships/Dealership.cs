@@ -29,6 +29,22 @@ public sealed class Dealership
     public DateTimeOffset ToLocalTime(DateTimeOffset instant) =>
         TimeZoneInfo.ConvertTime(instant, TimeZoneInfo.FindSystemTimeZoneById(TimeZoneId));
 
+    public OpeningHours? OpeningHoursOn(DateOnly date) =>
+        _openingHours.FirstOrDefault(hours => hours.Day == date.DayOfWeek);
+
+    public DateTimeOffset? ToUtc(DateOnly date, TimeOnly time)
+    {
+        var timeZone = TimeZoneInfo.FindSystemTimeZoneById(TimeZoneId);
+        var local = date.ToDateTime(time, DateTimeKind.Unspecified);
+
+        if (timeZone.IsInvalidTime(local))
+        {
+            return null;
+        }
+
+        return new DateTimeOffset(local, timeZone.GetUtcOffset(local)).ToUniversalTime();
+    }
+
     public bool IsOpenThroughout(TimeRange period)
     {
         var localStart = ToLocalTime(period.Start);

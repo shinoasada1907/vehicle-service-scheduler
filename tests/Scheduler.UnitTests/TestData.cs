@@ -55,12 +55,12 @@ internal static class TestData
     public static Technician NewTechnician(string name, params ServiceType[] qualifiedFor) =>
         new(Guid.NewGuid(), LondonId, name, qualifiedFor.Select(serviceType => serviceType.Id));
 
-    public static Appointment Booked(ServiceBay bay, Technician technician, string startUtc, int minutes = 60) =>
+    public static Appointment Booked(ServiceBay bay, Technician technician, string startUtc, int minutes = 60, Guid? vehicleId = null) =>
         Appointment.Confirm(
             Guid.NewGuid(),
             LondonId,
             CustomerId,
-            Guid.NewGuid(),
+            vehicleId ?? Guid.NewGuid(),
             Guid.NewGuid(),
             bay.Id,
             technician.Id,
